@@ -601,6 +601,38 @@ function deptPanel(i) {
 }
 
 // ---- P4 ----
+const PLAN_URL = 'https://docs.google.com/spreadsheets/d/1_ZDq4EOWfQiGtBBU_Eb-zpCG4-5ne5LCbOyzvvRKWnQ/edit#gid=0&range=A';
+const MK = {cnt_blank:'이수인원 누락', cnt_diff:'이수인원 불일치', no_rec:'참석기록 없음', date_diff:'일자 불일치', nodate:'일시 오류', unreg:'원내현황 미등록', blank_past:'실시 여부 미확인', future_rec:'예정일에 기록', min_blank:'시수 누락', tg_blank:'대상 누락'};
+function masterSec() {
+  const L = D.checks.master;
+  if (!L) return `<section class="card"><h2>원내교육실시현황 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
+  const err = L.filter(x => x.sev === 'err'), warn = L.filter(x => x.sev !== 'err');
+  const kinds = {}; L.forEach(x => kinds[x.kind] = (kinds[x.kind] || 0) + 1);
+  const chips = Object.keys(kinds).map(k => `<span class="note" style="margin-right:10px">${MK[k] || k} <b>${kinds[k]}</b></span>`).join('');
+  const row = x => `<tr><td class="r num">${x.r ? `<a href="${PLAN_URL}${x.r}" target="_blank" rel="noopener">${x.r}행</a>` : '–'}</td><td class="r">${x.d ? md(x.d) : '–'}</td><td>${x.k && KN[x.k] ? `<span class="kc" ${cvar(x.k)}><i></i>${KN[x.k]}</span>` : '–'}</td><td>${esc(x.t)}</td><td><b>${MK[x.kind] || x.kind}</b><br><span class="note">${esc(x.msg)}</span></td></tr>`;
+  const tbl = a => `<div class="tw tl"><table><thead><tr><th>시트 행</th><th>일자</th><th>구분</th><th>교육주제</th><th>점검 내용</th></tr></thead><tbody>${a.map(row).join('') || '<tr><td colspan="5">없음</td></tr>'}</tbody></table></div>`;
+  return `<section class="card"><h2>원내교육실시현황 입력 점검 <small>직접 수정 필요 ${err.length}건 · 확인 ${warn.length}건</small></h2>
+    <p class="hint">원내교육실시현황은 수기로 정리하는 시트라서 누락·오류가 있으면 해당 행을 직접 고쳐야 합니다. 시트1·시트2 참석 기록과 대조한 결과이며, 수정 후 새로고침(최대 1시간 이내 자동 반영)하면 사라집니다.</p>
+    <p style="margin:0 0 8px">${chips}</p>
+    <h3 style="font-size:14px;margin:14px 0 6px">수정 필요</h3>${tbl(err)}
+    <h3 style="font-size:14px;margin:14px 0 6px">확인 권장</h3>${tbl(warn)}</section>`;
+}
+function dupSec() {
+  const d = D.checks.dups;
+  if (!d) return `<section class="card"><h2>시트 중복 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
+  const t1 = d.s1.map(x => `<tr><td class="r">${md(x.d)}</td><td>${esc(x.t)}</td><td class="r num">${x.n}</td><td class="note">연번 ${x.nos.join(', ')}${x.n > x.nos.length ? ' …' : ''}</td></tr>`).join('') || '<tr><td colspan="4">중복 없음</td></tr>';
+  const t2 = d.s2.map(x => `<tr><td class="r">${md(x.d)}</td><td>${esc(x.t)}</td><td class="r num">${x.cnt}</td><td class="note">연번 ${x.nos.join(', ')}</td></tr>`).join('') || '<tr><td colspan="4">중복 없음</td></tr>';
+  const lg = (D.checks.dupLog || []).map(x => `<tr><td class="r">${esc(x.at)}</td><td>${esc(x.why)}</td><td class="r num">${x.n}행</td></tr>`).join('') || '<tr><td colspan="3">기록 없음</td></tr>';
+  return `<section class="card"><h2>시트 중복 입력 점검 <small>시트1 ${d.s1rows}행 · 시트2 ${d.s2rows}행</small></h2>
+    <p class="hint">같은 내용이 중복으로 입력된 행은 구글 시트에서 <b>주황색</b>으로 표시되고(남길 1행 제외), 삭제하면 색이 자동으로 사라집니다. 이 표는 현재 남아 있는 중복입니다.</p>
+    <h3 style="font-size:14px;margin:14px 0 6px">시트1 — 교육명·일자·사번·성명이 모두 같은 행</h3>
+    <div class="tw tl"><table><thead><tr><th>일자</th><th>교육명</th><th>중복 행</th><th>해당 행</th></tr></thead><tbody>${t1}</tbody></table></div>
+    <h3 style="font-size:14px;margin:14px 0 6px">시트2 — 교육코드·교육명·일자·참석인원·교육일시가 모두 같은 행</h3>
+    <div class="tw tl"><table><thead><tr><th>일자</th><th>교육명</th><th>참석인원</th><th>해당 행</th></tr></thead><tbody>${t2}</tbody></table></div>
+    <h3 style="font-size:14px;margin:14px 0 6px">정리 기록(삭제 로그 요약)</h3>
+    <div class="tw tl"><table><thead><tr><th>일시</th><th>내용</th><th>건수</th></tr></thead><tbody>${lg}</tbody></table></div>
+    <p class="note" style="margin:10px 0 0">삭제한 행의 전체 값은 구글 시트의 숨김 시트 '_삭제로그'에 보관되어 있습니다(이름·사번 포함이라 이 페이지에는 표시하지 않습니다).</p></section>`;
+}
 function p4() {
   const c = D.checks;
   const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
@@ -613,6 +645,8 @@ function p4() {
     <div class="kpi"><div class="lab">시트1 (참석자 행)</div><div class="val">${fmt(c.s1.matched)}<small>/ ${fmt(c.s1.total)}행 분류</small></div><div class="sub">6개 구분 ${fmt(c.s1.target)}행(중복 포함) → 중복 제거 후 ${fmt(ATT.length)}건</div></div>
     <div class="kpi"><div class="lab">원내현황과 인원 불일치</div><div class="val">${diff.length}<small>회</small></div><div class="sub">시트1 참석(중복 제거) ≠ 원내교육실시현황 이수인원</div></div>
   </div>
+  ${masterSec()}
+  ${dupSec()}
   <section class="card"><h2>분류 방식 (현재 기준)</h2>
     <ul class="plain">
       <li>시트1·시트2의 <b>교육명 + 교육일자</b>를 원내교육실시현황의 <b>교육주제 + 교육일시</b>와 대조해 구분·교육과정명·교육과정명-2를 부여했습니다.</li>
