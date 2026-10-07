@@ -71,6 +71,13 @@ button{font-size:inherit;color:inherit}
 .fgrid{display:grid;gap:14px}
 .fs{display:grid;gap:7px}.fl{font-size:12.5px;font-weight:600;color:var(--ink2)}
 .cg{display:flex;flex-wrap:wrap;gap:6px}
+.ms-wrap{position:relative}
+.msb{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:38px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);color:var(--ink);font-size:13.5px;cursor:pointer;text-align:left}
+.msb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.msb i{font-style:normal;color:var(--muted);font-size:12px}
+.msb[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.msp{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:300px;overflow:auto;padding:6px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);box-shadow:0 10px 28px rgba(17,24,39,.16)}
+.mso{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13.5px;cursor:pointer;color:var(--ink)}
+.mso:hover{background:var(--sunk)}.mso input{width:16px;height:16px;accent-color:var(--accent);flex:none}
 .cg.mg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.cg.mg .chip{padding:0}
 .chip:disabled{opacity:.35;cursor:default}.chip:disabled:hover{border-color:var(--line2)}
 .seldis{height:38px;display:flex;align-items:center;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);color:var(--muted);font-size:13px}
@@ -285,7 +292,7 @@ const ml = m => `${+m.slice(5)}월`;
 const YEARS = [...new Set(MONTHS.map(m => +m.slice(0, 4)))];
 
 // 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
-Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set()}); // 기준일시(연도)·월·세부부서는 다중 선택
+Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null}); // 기준일시(연도)·월·세부부서는 다중 선택
 const GROUPS = [
   ['병동', DEPTS.slice(0, 17)],
   ['중환자실', ['MFICU(MFI)','NICU','MICU','SICU','EICU']],
@@ -319,6 +326,19 @@ const PAGES = {
   p5:['분류 관리','시트에 자동 입력된 교육 중 분류되지 않은 교육을 구분·교육과정명으로 지정합니다. 지정한 내용은 구글시트에 저장되어 다음 집계부터 자동 반영됩니다.'],
   p4:['데이터 점검','교육 분류 결과와 원내교육실시현황과의 차이를 확인합니다. 자동 입력 데이터가 늘어날 때 먼저 살펴볼 페이지입니다.']
 };
+// 여러 개를 고를 수 있는 선택 상자(체크박스 목록). 고르는 동안 열린 채로 유지됩니다.
+const combo = (f, label, items) => `<button type="button" class="msb" data-ms="${f}" aria-expanded="${S.open === f}"><span>${esc(label)}</span><i aria-hidden="true">▾</i></button>${S.open === f ? `<div class="msp" role="listbox" aria-multiselectable="true">${items.map(([v, t, on]) => `<label class="mso"><input type="checkbox" data-f="${f}" data-v="${esc(v)}"${on ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>` : ''}`;
+function catGroupSummary() {
+  if (!S.cats.size) return '전체';
+  const on = GK.filter(([n, ks]) => ks.every(k => S.cats.has(k))).map(g => g[0]);
+  const rest = [...S.cats].filter(k => !GK.some(([n, ks]) => ks.includes(k) && ks.every(x => S.cats.has(x))));
+  return on.length && !rest.length ? (on.length <= 2 ? on.join(', ') : on.length + '개 선택') : (S.cats.size + '개 구분 선택');
+}
+function catKeySummary() {
+  if (!S.cats.size) return '전체';
+  const ks = ALLK.filter(k => S.cats.has(k));
+  return ks.length <= 2 ? ks.map(k => ALLN[k]).join(', ') : ks.length + '개 선택';
+}
 function filterHTML() {
   const opt = (v, t, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(t)}</option>`;
   const chip = (f, v, t, on, dis) => `<button class="chip" data-f="${f}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}>${t}</button>`;
@@ -330,8 +350,8 @@ function filterHTML() {
   return `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('y', 'all', '전체', !S.ys.size)}${YEARS.map(y => chip('y', y, y + '년', S.ys.has(y))).join('')}</div></div>
     <div class="fs"><span class="fl">분기</span><div class="cg">${chip('q', 'all', '전체', !S.ms.size)}${[1, 2, 3, 4].map(q => chip('q', q, q + '분기', qOn(q))).join('')}</div></div>
     <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({length: 12}, (_, i) => i + 1).map(m => chip('m', m, m + '월', S.ms.has(m), !monthHas(m))).join('')}</div></div>
-    <div class="fs"><span class="fl">교육 종류</span><div class="cg">${chip('cg', 'all', '전체', !S.cats.size)}${GK.map(([n, ks]) => chip('cg', n, n, ks.every(k => S.cats.has(k)))).join('')}</div></div>
-    <div class="fs"><span class="fl">교육 구분</span><div class="cg">${KEYS.map(k => chip('ck', k, KN[k], S.cats.has(k))).join('')}</div></div>
+    <div class="fs ms-wrap"><span class="fl">교육 종류</span>${combo('cg', catGroupSummary(), [['all', '전체', !S.cats.size], ...GK.map(([n, ks]) => [n, n, ks.every(k => S.cats.has(k))])])}</div>
+    <div class="fs ms-wrap"><span class="fl">교육 구분</span>${combo('ck', catKeySummary(), [['all', '전체', !S.cats.size], ...ALLK.map(k => [k, ALLN[k], S.cats.has(k)])])}</div>
     <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체 부서', S.grp)}${GROUPS.map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
     <div class="fs"><span class="fl">세부부서</span>${S.grp === 'all' ? '<div class="seldis">부서를 먼저 선택</div>' : `<div class="cg">${chip('u', 'all', '전체', !S.units.size)}${units.map(i => chip('u', i, esc(DEPTS[i]), S.units.has(i))).join('')}</div>`}</div>
     <button class="freset" data-f="reset">조건 초기화</button>
@@ -351,9 +371,7 @@ function renderFilters() {
   $('#f-sum2').textContent = filterSummary();
 }
 const tog = (set, v) => set.has(v) ? set.delete(v) : set.add(v);
-document.addEventListener('click', e => {
-  const b = e.target.closest('button[data-f]'); if (!b || b.disabled) return;
-  const f = b.dataset.f, v = b.dataset.v;
+function handleF(f, v) {
   if (f === 'y') { if (v === 'all') S.ys.clear(); else tog(S.ys, +v); }
   else if (f === 'q') {
     if (v === 'all') S.ms.clear();
@@ -361,11 +379,23 @@ document.addEventListener('click', e => {
   }
   else if (f === 'm') tog(S.ms, +v);
   else if (f === 'cg') { if (v === 'all') S.cats.clear(); else { const ks = GK.find(g => g[0] === v)[1]; if (ks.every(k => S.cats.has(k))) ks.forEach(k => S.cats.delete(k)); else ks.forEach(k => S.cats.add(k)); } }
-  else if (f === 'ck') tog(S.cats, v);
+  else if (f === 'ck') { if (v === 'all') S.cats.clear(); else tog(S.cats, v); }
   else if (f === 'u') { if (v === 'all') S.units.clear(); else tog(S.units, +v); }
   else if (f === 'reset') { S.ys.clear(); S.ms.clear(); S.cats.clear(); S.units.clear(); S.grp = 'all'; }
   render();
+}
+document.addEventListener('click', e => {
+  const ms = e.target.closest('button[data-ms]');
+  if (ms) { S.open = S.open === ms.dataset.ms ? null : ms.dataset.ms; render(); return; }
+  if (S.open && !e.target.closest('.ms-wrap')) { S.open = null; render(); }
+  const b = e.target.closest('button[data-f]'); if (!b || b.disabled) return;
+  handleF(b.dataset.f, b.dataset.v);
 });
+document.addEventListener('change', e => {
+  const c = e.target.closest('input[type=checkbox][data-f]'); if (!c) return;
+  handleF(c.dataset.f, c.dataset.v);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.open) { S.open = null; render(); } });
 document.addEventListener('change', e => {
   const t = e.target.closest('select[data-f]'); if (!t) return;
   if (t.dataset.f === 'grp') { S.grp = t.value; S.units.clear(); }
