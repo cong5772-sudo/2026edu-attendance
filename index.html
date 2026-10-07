@@ -354,7 +354,7 @@ const ml = m => `${+m.slice(5)}월`;
 const YEARS = [...new Set(MONTHS.map(m => +m.slice(0, 4)))];
 
 // 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
-S.p4done = false;
+S.p4done = false; S.p4dupdone = false; S.p4diffdone = false; S.p4noddone = false;
 Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null}); // 기준일시(연도)·월·세부부서는 다중 선택
 const GROUPS = [
   ['병동', DEPTS.slice(0, 17)],
@@ -363,6 +363,7 @@ const GROUPS = [
   ['외래·AK', ['외래(OPD)','AK']],
   ['응급실', ['ER(ERD)']],
   ['전담(PAM)', ['PAM']],
+  ['간호교육팀', ['간호교육팀']],
   ['기타', ['기타']]
 ].map(([n, ds]) => [n, ds.map(d => DEPTS.indexOf(d)).filter(i => i >= 0)]);
 const grpIdx = () => S.grp === 'all' ? null : GROUPS.find(g => g[0] === S.grp)[1];
@@ -672,7 +673,7 @@ function p3() {
   </div>
   <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${unkNote}
-  <p class="note">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 목록에 없는 부서→기타).</p>
+  <p class="note">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 15A→간호교육팀, 목록에 없는 부서→기타).</p>
   ${dp}
   ${mgrSec()}`;
 }
@@ -720,7 +721,7 @@ const doneSave = o => { try { localStorage.setItem(DONE_KEY, JSON.stringify(o));
 let P4ITEMS = [];
 function masterView() {
   const L = D.checks.master || [], done = doneLoad(), cur = new Set(L.map(mkey));
-  let dirty = false; Object.keys(done).forEach(k => { if (!cur.has(k)) { delete done[k]; dirty = true; } }); if (dirty) doneSave(done); // 시트에서 해결된 항목의 표시는 정리
+  let dirty = false; Object.keys(done).forEach(k => { if (!/^(dup[12]|diff|nod)\|/.test(k) && !cur.has(k)) { delete done[k]; dirty = true; } }); if (dirty) doneSave(done); // 시트에서 해결된 항목의 표시는 정리
   const st = x => { const d = done[mkey(x)]; return !d ? 'open' : d.built === D.built ? 'done' : 'again'; };
   return {L, st, open: L.filter(x => st(x) !== 'done')};
 }
@@ -741,20 +742,50 @@ function masterSec() {
     <h3 style="font-size:14px;margin:14px 0 6px">수정 필요 <small class="note">(집계에 영향)</small></h3>${tbl(err)}
     <h3 style="font-size:14px;margin:14px 0 6px">확인 권장 <small class="note">(집계에는 영향 없음)</small></h3>${tbl(warn)}</section>`;
 }
+// ③ 원내현황과 참석 인원이 다른 교육: 수정 완료 표시(원내교육실시현황과 같은 방식 — 시트 대조 후에도 남아 있으면 「재확인」)
+const diffKey = x => `diff|${x.id}|${x.mr}|${x.mc}|${x.n1}|${x.n2}`;
+function diffView(list) {
+  const done = doneLoad(), cur = new Set(list.map(diffKey));
+  let dirty = false; Object.keys(done).forEach(k => { if (/^diff\|/.test(k) && !cur.has(k)) { delete done[k]; dirty = true; } }); if (dirty) doneSave(done);
+  const st = x => { const d = done[diffKey(x)]; return !d ? 'open' : d.built === D.built ? 'done' : 'again'; };
+  return {st, open: list.filter(x => st(x) !== 'done')};
+}
+// ④ 원내현황에는 있으나 시트에 참석 기록이 없는 교육: 수정 완료 표시(③과 같은 방식)
+const nodKey = x => `nod|${x.id}|${x.mr}|${x.mc}|${x.d}`;
+function nodView(list) {
+  const done = doneLoad(), cur = new Set(list.map(nodKey));
+  let dirty = false; Object.keys(done).forEach(k => { if (/^nod\|/.test(k) && !cur.has(k)) { delete done[k]; dirty = true; } }); if (dirty) doneSave(done);
+  const st = x => { const d = done[nodKey(x)]; return !d ? 'open' : d.built === D.built ? 'done' : 'again'; };
+  return {st, open: list.filter(x => st(x) !== 'done')};
+}
+// 시트 중복 입력: 같은 내용이 서로 다른 병동 교육일 수 있어 「오류」가 아니라 「확인 대상」입니다.
+// 확인 완료로 표시하면 내용(일자·교육명·인원·연번)이 같은 동안 계속 숨기고, 달라지면 다시 보여 줍니다. 이 브라우저에만 저장됩니다.
+function dupView() {
+  const d = D.checks.dups || {s1: [], s2: []}, done = doneLoad();
+  const mk = (tab, x) => `dup${tab}|${x.d}|${x.t}|${tab === '1' ? x.n : x.cnt}|${x.nos.join(',')}`;
+  const cur = new Set([...(d.s1 || []).map(x => mk('1', x)), ...(d.s2 || []).map(x => mk('2', x))]);
+  let dirty = false; Object.keys(done).forEach(k => { if (/^dup[12]\|/.test(k) && !cur.has(k)) { delete done[k]; dirty = true; } }); if (dirty) doneSave(done);
+  const wrap = (tab, a) => { const all = (a || []).map(x => ({x, key: mk(tab, x), done: !!done[mk(tab, x)]})); return {all, open: all.filter(i => !i.done)}; };
+  return {s1: wrap('1', d.s1), s2: wrap('2', d.s2)};
+}
 function dupSec() {
   const d = D.checks.dups;
   if (!d) return `<section class="card" id="sec-dup"><h2>② 시트 중복 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
-  const t = (a, tab, cnt) => a.map(x => `<tr><td class="r">${md(x.d)}</td><td>${esc(x.t)}</td><td class="r num">${cnt(x)}</td><td>${x.nos.join(', ')}${x.n > x.nos.length ? ' …' : ''}</td></tr>`).join('') || '<tr><td colspan="4">✔ 중복 없음</td></tr>';
+  const dv = dupView(), show = S.p4dupdone, nDone = dv.s1.all.length + dv.s2.all.length - dv.s1.open.length - dv.s2.open.length;
   const lg = (D.checks.dupLog || []).map(x => `<tr><td class="r">${esc(x.at)}</td><td>${esc(x.why)}</td><td class="r num">${x.n}행</td></tr>`).join('') || '<tr><td colspan="3">기록 없음</td></tr>';
-  const head = '<thead><tr><th>일자</th><th>교육명</th><th>중복 행 수</th><th>연번 (A열)</th></tr></thead>';
-  return `<section class="card" id="sec-dup"><h2>② 시트 중복 입력 점검 <small>시트1 ${d.s1rows}행 · 시트2 ${d.s2rows}행</small></h2>
-    <p class="hint">같은 내용이 중복으로 입력된 행은 구글 시트에서 <b>주황색</b>으로 표시됩니다(남길 1행 제외). <b>연번(A열)</b>으로 찾아 주황색 행을 삭제하면 색이 자동으로 사라집니다.</p>
+  const tb = (tab, v) => { const rows = show ? v.all : v.open;
+    const body = rows.map(i => `<tr class="${i.done ? 'dn' : ''}"><td class="ck"><label title="내용을 확인했고 문제가 없으면 체크하세요. 바로 사라집니다."><input type="checkbox" data-dupdone="${tab}:${v.all.indexOf(i)}" ${i.done ? 'checked' : ''}> <span>확인</span></label></td><td class="r">${md(i.x.d)}</td><td>${esc(i.x.t)}</td><td class="r num">${tab === '1' ? i.x.n : i.x.cnt}</td><td>${i.x.nos.join(', ')}${tab === '1' && i.x.n > i.x.nos.length ? ' …' : ''}</td></tr>`).join('')
+      || `<tr><td colspan="5">${v.all.length ? '✔ 모두 확인 완료' : '✔ 중복 없음'}</td></tr>`;
+    return `<div class="tw tl"><table><thead><tr><th class="ck">확인 완료</th><th>일자</th><th>교육명</th>${tab === '1' ? '<th>중복 행 수</th>' : '<th>참석인원</th>'}<th>연번 (A열)</th></tr></thead><tbody>${body}</tbody></table></div>${v.open.length ? `<p style="margin:6px 0 0"><button class="btn" data-dupall="${tab}">이 표 ${v.open.length}건 모두 확인 완료</button></p>` : ''}`; };
+  return `<section class="card" id="sec-dup"><h2>② 시트 중복 입력 점검 <small>시트1 ${d.s1rows}행 · 시트2 ${d.s2rows}행 · 확인 필요 ${dv.s1.open.length + dv.s2.open.length}건${nDone ? ` · 확인 완료 ${nDone}건` : ''}</small></h2>
+    <p class="hint">같은 내용이 중복으로 입력된 행은 구글 시트에서 <b>주황색</b>으로 표시됩니다. 단, <b>다른 병동이 같은 교육을 따로 진행한 경우</b>처럼 중복이 아닐 수도 있으니 내용을 확인해서, <b>문제가 없으면 「확인」을 체크</b>하세요. 체크하면 바로 사라지고, 같은 내용이 계속되는 동안은 다시 나타나지 않습니다(연번·인원이 바뀌면 다시 표시). 중복이 맞다면 <b>연번(A열)</b>으로 찾아 주황색 행을 삭제하세요. 확인 표시는 <b>이 브라우저에만</b> 저장됩니다.</p>
+    ${nDone ? `<p style="margin:0 0 6px"><button class="btn" data-p4dupshow="1">${show ? '확인 완료한 항목 숨기기' : `확인 완료한 항목 ${nDone}건 보기`}</button></p>` : ''}
     <h3 style="font-size:14px;margin:14px 0 6px">시트1 — 교육명·일자·사번·성명이 모두 같은 행</h3>
     <p style="margin:0 0 6px">${where(SH_RAW, '시트1', '연번')} ${gl(rawUrl('s1'), '탭 열기')}</p>
-    <div class="tw tl"><table>${head}<tbody>${t(d.s1, 's1', x => x.n)}</tbody></table></div>
+    ${tb('1', dv.s1)}
     <h3 style="font-size:14px;margin:14px 0 6px">시트2 — 교육코드·교육명·일자·참석인원·교육일시가 모두 같은 행</h3>
     <p style="margin:0 0 6px">${where(SH_RAW, '시트2', '연번')} ${gl(rawUrl('s2'), '탭 열기')}</p>
-    <div class="tw tl"><table>${head}<tbody>${t(d.s2, 's2', x => x.cnt)}</tbody></table></div>
+    ${tb('2', dv.s2)}
     <h3 style="font-size:14px;margin:14px 0 6px">정리 기록(삭제 로그 요약)</h3>
     <div class="tw tl"><table><thead><tr><th>일시</th><th>내용</th><th>건수</th></tr></thead><tbody>${lg}</tbody></table></div>
     <p class="note" style="margin:10px 0 0">삭제한 행의 전체 값은 시트의 숨김 탭 '_삭제로그'에 보관되어 있습니다(이름·사번 포함이라 이 페이지에는 표시하지 않습니다).</p></section>`;
@@ -764,14 +795,15 @@ function p4() {
   const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
   const diff = SESS.filter(s => s.st === 'done' && s.mc != null && s.n1 !== s.mc).sort((a, b) => Math.abs(b.n1 - b.mc) - Math.abs(a.n1 - a.mc));
   const nod = SESS.filter(s => s.st === 'nodata');
+  const dfv = diffView(diff), ndv = nodView(nod);
   const L = c.master ? masterView().open : [], err = L.filter(x => x.sev === 'err').length, warn = L.length - err;
-  const d1 = (c.dups && c.dups.s1 || []).length, d2 = (c.dups && c.dups.s2 || []).length;
+  const dv = dupView(), d1 = dv.s1.open.length, d2 = dv.s2.open.length;
   const todo = [
     {n: err, label: '원내교육실시현황 — 입력 수정 필요', w: where(SH_PLAN, TB_PLAN, '이수인원·교육일시'), to: 'sec-master', ext: planUrl()},
     {n: warn, label: '원내교육실시현황 — 확인 권장', w: where(SH_PLAN, TB_PLAN, '대상·시수·미등록'), to: 'sec-master', ext: planUrl(), soft: 1},
-    {n: d1 + d2, label: `중복 입력 (시트1 ${d1} · 시트2 ${d2})`, w: where(SH_RAW, '시트1·시트2', '연번'), to: 'sec-dup', ext: rawUrl(d1 ? 's1' : 's2')},
-    {n: diff.length, label: '원내현황과 참석 인원이 다른 교육', w: where(SH_PLAN, TB_PLAN, 'I열 이수인원'), to: 'sec-diff', ext: planUrl(), soft: 1},
-    {n: nod.length, label: '시트에 참석 기록이 없는 교육', w: where(SH_RAW, '시트1·시트2', '참석자 입력'), to: 'sec-nod', ext: rawUrl('s1'), soft: 1},
+    {n: d1 + d2, label: `중복 입력 — 확인 필요 (시트1 ${d1} · 시트2 ${d2})`, w: where(SH_RAW, '시트1·시트2', '연번'), to: 'sec-dup', ext: rawUrl(d1 ? 's1' : 's2')},
+    {n: dfv.open.length, label: '원내현황과 참석 인원이 다른 교육', w: where(SH_PLAN, TB_PLAN, 'I열 이수인원'), to: 'sec-diff', ext: planUrl(), soft: 1},
+    {n: ndv.open.length, label: '시트에 참석 기록이 없는 교육', w: where(SH_RAW, '시트1·시트2', '참석자 입력'), to: 'sec-nod', ext: rawUrl('s1'), soft: 1},
     {n: c.unmatchedLike.length, label: '분류되지 않은 직무 교육', w: '<span class="where"><b>대시보드</b> › 분류 관리 🔒</span>', to: 'sec-unm', soft: 1}
   ];
   const card = t => `<div class="t ${t.n ? (t.soft ? 'warn' : 'crit') : 'ok'}"><div class="n">${t.n ? fmt(t.n) + '<small>건</small>' : '✔'}</div><div class="l">${t.label}</div><div>${t.w}</div><div class="acts">${t.n ? `<button class="go" data-scroll="${t.to}">목록 보기</button>${t.ext ? gl(t.ext, '시트 열기') : ''}` : '<span class="note">이상 없음</span>'}</div></div>`;
@@ -780,10 +812,12 @@ function p4() {
   <section class="card"><h2>먼저 확인할 곳</h2><p class="hint">아래 카드는 <b>어느 시트의 어느 탭</b>을 고쳐야 하는지 보여 줍니다. 빨간색은 집계에 영향을 주는 오류, 주황색은 확인하면 좋은 항목입니다. 「시트 열기」는 해당 시트·탭을 새 창으로 엽니다.</p><div class="todo">${todo.map(card).join('')}</div></section>
   ${masterSec()}
   ${dupSec()}
-  <section class="card" id="sec-diff"><h2>③ 원내현황과 참석 인원이 다른 교육</h2><p style="margin:2px 0 8px">${where(SH_PLAN, TB_PLAN, 'I열 이수인원')}</p><p class="hint">같은 교육이 여러 날 보강으로 진행되면 시트 기준 인원이 더 많습니다. 이수인원이 맞는지 확인하고 틀리면 <b>해당 행의 I열</b>을 고치세요. (시트1 = 중복 제거한 참석, 시트2 = 교육별 인원 합계)</p>
-    <div class="tw tl"><table><thead><tr><th>고칠 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>시트1 참석</th><th>시트2 합계</th><th>원내현황(I열)</th></tr></thead><tbody>${diff.map(s => `<tr data-sid="${s.id}"><td>${s.mr ? gl(planUrl('I' + s.mr), s.mr + '행') : '–'}</td><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r num">${s.n1}</td><td class="r num">${s.n2}</td><td class="r num">${s.mc}</td></tr>`).join('') || '<tr><td colspan="7">✔ 차이 없음</td></tr>'}</tbody></table></div></section>
-  <section class="card" id="sec-nod"><h2>④ 원내현황에 있으나 시트에 참석 기록이 없는 교육</h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1·시트2', '참석자 입력')} ${gl(rawUrl('s1'), '시트1 열기')}</p><p class="hint">기준일(${D.asof}) 이전 일정인데 참석 데이터가 없는 교육입니다. 실제로 열렸다면 <b>부서별교육참석명단 시트</b>에 참석자가 들어왔는지 확인하고, 열리지 않았다면 <b>원내교육실시현황</b>에서 행을 정리하세요.</p>
-    <div class="tw tl"><table><thead><tr><th>원내현황 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>이수인원</th></tr></thead><tbody>${nod.map(s => `<tr><td>${s.mr ? gl(planUrl('D' + s.mr), s.mr + '행') : '–'}</td><td class="r">${md(s.d)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r">${s.mc ?? '–'}</td></tr>`).join('') || '<tr><td colspan="5">✔ 없음</td></tr>'}</tbody></table></div></section>
+  <section class="card" id="sec-diff"><h2>③ 원내현황과 참석 인원이 다른 교육 <small>확인 필요 ${dfv.open.length}건${diff.length - dfv.open.length ? ` · 수정 완료 ${diff.length - dfv.open.length}건` : ''}</small></h2><p style="margin:2px 0 8px">${where(SH_PLAN, TB_PLAN, 'I열 이수인원')}</p><p class="hint">같은 교육이 여러 날 보강으로 진행되면 시트 기준 인원이 더 많습니다. 이수인원이 맞는지 확인하고 틀리면 <b>해당 행의 I열</b>을 고친 뒤 <b>「완료」를 체크</b>하세요. 바로 사라지고, 시트 대조(최대 1시간 이내) 후에도 차이가 남아 있으면 「재확인」으로 다시 나타납니다. (시트1 = 중복 제거한 참석, 시트2 = 교육별 인원 합계) 완료 표시는 <b>이 브라우저에만</b> 저장됩니다.</p>
+    ${diff.length - dfv.open.length ? `<p style="margin:0 0 6px"><button class="btn" data-p4diffshow="1">${S.p4diffdone ? '완료한 항목 숨기기' : `완료한 항목 ${diff.length - dfv.open.length}건 보기`}</button></p>` : ''}
+    <div class="tw tl"><table><thead><tr><th class="ck">수정 완료</th><th>고칠 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>시트1 참석</th><th>시트2 합계</th><th>원내현황(I열)</th></tr></thead><tbody>${(S.p4diffdone ? diff : dfv.open).map(s => { const stt = dfv.st(s); return `<tr data-sid="${s.id}" class="${stt === 'done' ? 'dn' : ''}"><td class="ck"><label title="시트를 고쳤으면 체크하세요."><input type="checkbox" data-diffdone="${s.id}" ${stt === 'done' ? 'checked' : ''}> <span>완료</span></label></td><td>${s.mr ? gl(planUrl('I' + s.mr), s.mr + '행') : '–'}${stt === 'again' ? '<br><span class="tag crit" title="수정 완료로 표시했지만 시트 대조 후에도 차이가 남아 있습니다">재확인</span>' : ''}</td><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r num">${s.n1}</td><td class="r num">${s.n2}</td><td class="r num">${s.mc}</td></tr>`; }).join('') || `<tr><td colspan="8">${diff.length ? '✔ 모두 확인 완료' : '✔ 차이 없음'}</td></tr>`}</tbody></table></div></section>
+  <section class="card" id="sec-nod"><h2>④ 원내현황에 있으나 시트에 참석 기록이 없는 교육 <small>확인 필요 ${ndv.open.length}건${nod.length - ndv.open.length ? ` · 수정 완료 ${nod.length - ndv.open.length}건` : ''}</small></h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1·시트2', '참석자 입력')} ${gl(rawUrl('s1'), '시트1 열기')}</p><p class="hint">기준일(${D.asof}) 이전 일정인데 참석 데이터가 없는 교육입니다. 실제로 열렸다면 <b>부서별교육참석명단 시트</b>에 참석자가 들어왔는지 확인하고, 열리지 않았다면 <b>원내교육실시현황</b>에서 행을 정리하세요. 확인·수정했으면 <b>「완료」를 체크</b>하세요. 바로 사라지고, 시트 대조(최대 1시간 이내) 후에도 기록이 없으면 「재확인」으로 다시 나타납니다. 완료 표시는 <b>이 브라우저에만</b> 저장됩니다.</p>
+    ${nod.length - ndv.open.length ? `<p style="margin:0 0 6px"><button class="btn" data-p4nodshow="1">${S.p4noddone ? '완료한 항목 숨기기' : `완료한 항목 ${nod.length - ndv.open.length}건 보기`}</button></p>` : ''}
+    <div class="tw tl"><table><thead><tr><th class="ck">수정 완료</th><th>원내현황 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>이수인원</th></tr></thead><tbody>${(S.p4noddone ? nod : ndv.open).map(s => { const stt = ndv.st(s); return `<tr class="${stt === 'done' ? 'dn' : ''}"><td class="ck"><label title="확인·수정했으면 체크하세요."><input type="checkbox" data-noddone="${s.id}" ${stt === 'done' ? 'checked' : ''}> <span>완료</span></label></td><td>${s.mr ? gl(planUrl('D' + s.mr), s.mr + '행') : '–'}${stt === 'again' ? '<br><span class="tag crit" title="수정 완료로 표시했지만 시트 대조 후에도 참석 기록이 없습니다">재확인</span>' : ''}</td><td class="r">${md(s.d)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r">${s.mc ?? '–'}</td></tr>`; }).join('') || `<tr><td colspan="6">${nod.length ? '✔ 모두 확인 완료' : '✔ 없음'}</td></tr>`}</tbody></table></div></section>
   <section class="card" id="sec-unm"><h2>⑤ 직무 관련 교육명이지만 분류되지 않은 항목</h2><p style="margin:2px 0 8px"><span class="where"><b>대시보드</b> › 분류 관리 🔒 (간호교육팀)</span></p><p class="hint">원내교육실시현황에 등재되지 않아 6개 구분에서 제외된 교육입니다. 분류 관리에서 구분을 지정하거나 <b>원내교육실시현황</b>에 행을 추가하세요.</p>
     <div class="tw tl"><table><thead><tr><th>최초일</th><th>교육명</th><th>교육코드</th><th>시트2 건수</th><th>참석 합계</th></tr></thead><tbody>${c.unmatchedLike.map(u => `<tr><td class="r">${md(u.d)}</td><td>${esc(u.t)}</td><td>${esc(u.c)}</td><td class="r num">${u.n}</td><td class="r num">${u.p}</td></tr>`).join('') || '<tr><td colspan="5">✔ 없음</td></tr>'}</tbody></table></div></section>
   <section class="card"><h2>⑥ 부서 '기타'로 분류된 소속 <small class="note">참고</small></h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1', 'G열 부서')}</p><p class="hint">대시보드 부서 목록(14A~PAM)에 없는 소속입니다. 병동이 아닌 부서(예: 간호국)라면 그대로 두어도 되고, 병동이면 부서 목록 추가가 필요합니다.</p>
@@ -941,6 +975,28 @@ function bind() {
     if (ch.checked) done[k] = {at: new Date().toISOString(), built: D.built}; else delete done[k];
     doneSave(done); const y = window.scrollY; render(); window.scrollTo(0, y);
   }));
+  document.querySelectorAll('input[data-dupdone]').forEach(ch => ch.addEventListener('change', () => {
+    const [tab, idx] = ch.dataset.dupdone.split(':'), it = dupView()['s' + tab].all[+idx]; if (!it) return;
+    const done = doneLoad(); if (ch.checked) done[it.key] = {at: new Date().toISOString(), built: '*'}; else delete done[it.key];
+    doneSave(done); const y = window.scrollY; render(); window.scrollTo(0, y);
+  }));
+  document.querySelectorAll('[data-dupall]').forEach(b => b.addEventListener('click', () => {
+    const v = dupView()['s' + b.dataset.dupall], done = doneLoad(), at = new Date().toISOString();
+    v.open.forEach(i => { done[i.key] = {at, built: '*'}; }); doneSave(done); const y = window.scrollY; render(); window.scrollTo(0, y);
+  }));
+  document.querySelectorAll('[data-p4dupshow]').forEach(b => b.addEventListener('click', () => { S.p4dupdone = !S.p4dupdone; const y = window.scrollY; render(); window.scrollTo(0, y); }));
+  document.querySelectorAll('input[data-diffdone]').forEach(ch => { ch.closest('td').addEventListener('click', e => e.stopPropagation()); ch.addEventListener('change', () => {
+    const x = SESS[+ch.dataset.diffdone]; if (!x) return;
+    const done = doneLoad(), k = diffKey(x); if (ch.checked) done[k] = {at: new Date().toISOString(), built: D.built}; else delete done[k];
+    doneSave(done); const y = window.scrollY; render(); window.scrollTo(0, y);
+  }); });
+  document.querySelectorAll('[data-p4diffshow]').forEach(b => b.addEventListener('click', () => { S.p4diffdone = !S.p4diffdone; const y = window.scrollY; render(); window.scrollTo(0, y); }));
+  document.querySelectorAll('input[data-noddone]').forEach(ch => ch.addEventListener('change', () => {
+    const x = SESS[+ch.dataset.noddone]; if (!x) return;
+    const done = doneLoad(), k = nodKey(x); if (ch.checked) done[k] = {at: new Date().toISOString(), built: D.built}; else delete done[k];
+    doneSave(done); const y = window.scrollY; render(); window.scrollTo(0, y);
+  }));
+  document.querySelectorAll('[data-p4nodshow]').forEach(b => b.addEventListener('click', () => { S.p4noddone = !S.p4noddone; const y = window.scrollY; render(); window.scrollTo(0, y); }));
   document.querySelectorAll('[data-p4done]').forEach(b => b.addEventListener('click', () => { S.p4done = !S.p4done; const y = window.scrollY; render(); window.scrollTo(0, y); }));
   document.querySelectorAll('[data-scroll]').forEach(b => b.addEventListener('click', () => { const el = document.getElementById(b.dataset.scroll); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }));
   document.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => { S.mv = b.dataset.mv; render(); }));
