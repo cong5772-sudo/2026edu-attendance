@@ -17,7 +17,7 @@ body{margin:0}[hidden]{display:none!important}
   --bg:#f3f5f9;--surface:#fff;--sunk:#f4f6fa;--ink:#111827;--ink2:#4b5563;--muted:#6b7280;
   --line:#e6eaf1;--line2:#d5dbe5;--accent:#2563eb;--accent-ink:#fff;--accent-soft:#e8efff;
   --navy:#1f3a68;--navy2:#2a4b85;
-  --c-REG:#2563eb;--c-EMG:#f59e0b;--c-TOP:#10b981;--c-DED:#8b5cf6;--c-SEN:#ec4899;--c-PTL:#06b6d4;--c-MOV:#64748b;--c-SPC:#ea580c;
+  --c-REG:#2f5d9e;--c-EMG:#5b97c9;--c-TOP:#93c4d6;--c-DED:#3f9d92;--c-SEN:#d9a35c;--c-PTL:#b9694f;--c-MOV:#a7b1bd;--c-SPC:#6f7f94;
   --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--good-ink:#006300;--crit-ink:#b42d2d;
   --f-ui:"S-Core Dream","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-num:var(--f-ui);--r:10px;
   color-scheme:light;
@@ -27,7 +27,7 @@ body{margin:0}[hidden]{display:none!important}
     --bg:#0b1220;--surface:#121a2b;--sunk:#0f1626;--ink:#e8edf6;--ink2:#b6c0d1;--muted:#8a96aa;
     --line:#1f2a3f;--line2:#2b3954;--accent:#60a5fa;--accent-ink:#0b1220;--accent-soft:#16264a;
     --navy:#14254a;--navy2:#1d3566;
-    --c-REG:#60a5fa;--c-EMG:#fbbf24;--c-TOP:#34d399;--c-DED:#a78bfa;--c-SEN:#f472b6;--c-PTL:#22d3ee;--c-MOV:#94a3b8;--c-SPC:#fb923c;
+    --c-REG:#6f9fe3;--c-EMG:#8fc0e6;--c-TOP:#b4dbe6;--c-DED:#63c2b4;--c-SEN:#e9be85;--c-PTL:#dc9378;--c-MOV:#aab5c2;--c-SPC:#8795aa;
     --good-ink:#5fd35f;--crit-ink:#ee7f7f;color-scheme:dark;
   }
 }
@@ -51,7 +51,7 @@ button{font-size:inherit;color:inherit}
 .refresh{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);cursor:pointer;font-size:16px}.refresh:hover{border-color:var(--accent);color:var(--accent)}.refresh.spin{animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 .pill b{font-weight:500}.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
 /* layout */
-.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;padding:24px clamp(16px,2vw,28px) 48px}
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;max-width:1560px;margin:0 auto;padding:24px clamp(16px,2vw,28px) 48px}
 .side{position:sticky;top:76px;display:grid;gap:14px;align-content:start;max-height:calc(100vh - 92px);overflow:auto;padding-bottom:4px}
 .navcard{background:linear-gradient(160deg,var(--navy2),var(--navy));border-radius:16px;padding:10px;box-shadow:0 6px 18px rgba(31,58,104,.22)}
 .navlist{display:grid;gap:4px}
@@ -97,7 +97,7 @@ button{font-size:inherit;color:inherit}
 .kpi .lab{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;color:var(--ink2)}
 .kpi:nth-child(n+2) .lab::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
 .kpi:nth-child(4) .lab::before{background:#f59e0b}
-.kpi .val{font-size:36px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.kpi .val{font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
 .kpi:nth-child(2) .val,.kpi:nth-child(3) .val{color:var(--accent)}
 .kpi:nth-child(4) .val{color:#b45309}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi:nth-child(4) .val{color:#fbbf24}}
@@ -108,13 +108,13 @@ button{font-size:inherit;color:inherit}
 .kpi:first-child::before{width:150px;height:150px;right:-30px;top:-50px}
 .kpi:first-child::after{width:110px;height:110px;right:70px;bottom:-60px}
 .kpi:first-child .lab,.kpi:first-child .sub,.kpi:first-child .val small{color:rgba(255,255,255,.82)}
-.kpi:first-child .val{font-size:42px}
+.kpi:first-child .val{font-size:36px}
 /* cards */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-width:0;box-shadow:0 1px 2px rgba(17,24,39,.04)}
-.card h2{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-size:17px;font-weight:700}
+.card h2{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-size:16px;font-weight:700}
 .card h2::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--accent);flex:none}
 .card .hint{margin:0 0 12px;font-size:12px;color:var(--muted)}
-.sech{display:flex;align-items:center;gap:8px;margin:4px 0 10px;font-size:17px;font-weight:700}
+.sech{display:flex;align-items:center;gap:8px;margin:4px 0 10px;font-size:16px;font-weight:700}
 .sech::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--accent)}
 .grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 8px;font-size:12px;color:var(--ink2)}
@@ -146,6 +146,7 @@ button{font-size:inherit;color:inherit}
 .tg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .btn{padding:7px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);cursor:pointer;font-size:12.5px;font-weight:600;text-decoration:none;color:var(--ink2);display:inline-block}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.btn.pri:hover{filter:brightness(1.08);color:var(--accent-ink)}
 select{font:inherit}
 /* tables */
 .tw{overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-height:72vh}
@@ -176,6 +177,8 @@ ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)}ul.plain li{margin:4
 .stat3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .mini{display:grid;gap:8px}.mini .l{display:grid;grid-template-columns:92px minmax(0,1fr) 38px;gap:8px;align-items:center;font-size:12.5px}
 .mini.share .l{grid-template-columns:140px minmax(0,1fr) 40px;gap:10px}
+.stack{display:grid;gap:14px}.stack>*{min-width:0}
+.mini.pos .l{grid-template-columns:110px minmax(0,1fr) 56px;gap:12px;font-size:13px}
 .mini .b{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}.mini .b i{display:block;height:100%;background:var(--accent)}
 dialog{border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,94vw);max-height:88vh}
 dialog::backdrop{background:rgba(11,18,32,.5)}
@@ -254,7 +257,9 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
 <dialog id="dlg"><div class="dh"><div><h3 id="dt"></h3><p id="dp"></p></div><button class="x" id="dx" aria-label="닫기">×</button></div><div class="db" id="dbody"></div></dialog>
 <dialog id="adlg"><div class="dh"><div><h3>관리자 모드</h3><p>참석자 명단(이름·사번 포함)은 비밀번호를 입력한 관리자만 받을 수 있습니다.</p></div><button class="x" id="adx" aria-label="닫기">×</button></div>
   <form class="db" id="adf" method="dialog"><input type="password" id="adpw" placeholder="비밀번호" autocomplete="current-password" style="padding:10px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
-  <p class="note" id="aderr" style="color:var(--crit-ink);margin:0"></p><button class="btn" id="adok" type="submit" style="justify-self:start">확인</button></form></dialog>
+  <p class="note" id="aderr" style="color:var(--crit-ink);margin:0"></p><button class="btn" id="adok" type="submit" style="justify-self:start">확인</button></form>
+  <div class="db" id="gsec" hidden style="border-top:1px solid var(--line)"><div><b>부서 관리자(파트장) 로그인</b><p class="note" style="margin:4px 0 0">교육팀에 등록된 구글 계정으로 로그인하면 <b>본인 부서</b>의 참석자 명단을 확인하고 엑셀로 받을 수 있습니다.</p></div>
+  <div id="gbtn"></div><p class="note" id="gerr" style="color:var(--crit-ink);margin:0"></p></div></dialog>
 <div id="tip" hidden></div>
 
 <script src="config.js"></script>
@@ -423,15 +428,15 @@ function render() {
 }
 
 // ---- charts ----
-function stackChart(months, byMonth, keys, h = 230) {
-  const W = 640, H = h, L = 34, R = 8, T = 18, B = 26;
+function stackChart(months, byMonth, keys, h = 230, W = 640) {
+  const H = h, L = 34, R = 8, T = 18, B = 26;
   const max = Math.max(10, ...months.map(m => sum(keys, k => byMonth[m]?.[k] || 0)));
   const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); return Math.ceil(max / p * 2) / 2 * p; })();
   const bw = (W - L - R) / months.length;
   let g = '';
   for (let i = 0; i <= 4; i++) { const v = nice * i / 4, y = H - B - (H - B - T) * i / 4; g += `<line class="grid" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text x="${L-6}" y="${y+4}" text-anchor="end">${Math.round(v)}</text>`; }
   months.forEach((m, i) => {
-    let y = H - B; const x = L + i * bw + bw * .18, w = bw * .64; let tot = 0;
+    let y = H - B; const w = Math.min(bw * .64, 52), x = L + i * bw + (bw - w) / 2; let tot = 0;
     keys.forEach(k => { const v = byMonth[m]?.[k] || 0; tot += v; if (!v) return; const hh = (H - B - T) * v / nice; y -= hh;
       g += `<rect class="bar" x="${x}" y="${y}" width="${w}" height="${hh}" fill="var(--c-${k})" data-tip="${esc(ml(m))} · ${esc(ALLN[k])}: ${fmt(v)}명" rx="2"/>`; });
     if (tot) g += `<text class="tot" x="${x + w/2}" y="${y - 4}" text-anchor="middle">${fmt(tot)}</text>`;
@@ -511,10 +516,31 @@ function monthCat() {
   const head = K.map(k => `<th ${cvar(k)}><span class="cdot"></span>${ALLN[k]}</th>`).join('');
   const body = months.map(m => `<tr><th>${ml(m)}</th>${K.map(k => { const n = v(cell[m + '|' + k]); return `<td class="num heat ${n ? '' : 'zero'}" ${heat(n, cmax[k], k)}>${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot">${v(rowT[m]) ? fmt(v(rowT[m])) : '·'}</td></tr>`).join('');
   const foot = `<tr class="sum"><th>합계</th>${K.map(k => `<td class="num">${fmt(v(colT[k]))}</td>`).join('')}<td class="num tot">${fmt(grand)}</td></tr>`;
-  return `<section class="card"><div class="tools"><div><h2>월별 구분별 참석 인원</h2><p class="hint" style="margin:0">정기직무교육 · 응급간호술기 · 주제별 술기 · 전담간호사 직무교육 · 선임간호사 교육 · 파트장 교육 · 부서이동자 교육 · 부서별 특성화 교육 (조회 조건 반영)</p></div>
-    <div class="tg" role="group" aria-label="집계 기준"><button data-metric="rows" aria-pressed="${S.metric === 'rows'}">연인원</button><button data-metric="persons" aria-pressed="${S.metric === 'persons'}">실인원</button></div></div>
+  return `<section class="card"><div class="tools"><div><h2>월별 구분별 참석 인원</h2><p class="hint" style="margin:0">정기직무교육 · 응급간호술기 · 주제별 술기 · 전담간호사 직무교육 · 선임간호사 교육 · 파트장 교육 · 부서이동자 교육 · 부서별 특성화 교육 (조회 조건 반영)</p></div></div>
     <div class="tw" style="margin-top:10px"><table><thead><tr><th>월</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
-    <p class="note" style="margin-top:8px">${S.metric === 'rows' ? '연인원: 교육 참석 건수의 합입니다.' : '실인원: 같은 칸(월·구분) 안에서 중복을 제거한 사람 수입니다. 합계는 전체 기간·전체 구분에서 중복을 제거해 칸의 합과 다를 수 있습니다.'}</p></section>`;
+    <p class="note" style="margin-top:8px">연인원: 교육 참석 건수의 합입니다.</p></section>`;
+}
+// ---- P2 helpers: 월별·구분별 / 구분별·직위별 표 (부서이동자·부서별 특성화 교육 제외) ----
+const share = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '–';
+function monthKeyTable(at, sel) {
+  const months = rangeMonths(), o = monthData(at, sel);
+  const head = sel.map(k => `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}</th>`).join('');
+  const rt = m => sum(sel, k => o[m]?.[k] || 0);
+  const body = months.map(m => `<tr><th>${ml(m)}</th>${sel.map(k => { const n = o[m]?.[k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot ${rt(m) ? '' : 'zero'}">${rt(m) ? fmt(rt(m)) : '·'}</td></tr>`).join('');
+  const foot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(sum(months, m => o[m]?.[k] || 0))}</td>`).join('')}<td class="num tot">${fmt(sum(months, rt))}</td></tr>`;
+  return `<section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준 · 부서이동자 교육·부서별 특성화 교육은 제외</p>
+    <div class="tw"><table><thead><tr><th>월</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div></section>`;
+}
+function posKeyTable(at, sel) {
+  const cell = POS.map(() => ({})), colT = {}; let unk = {}, unkT = 0;
+  at.forEach(a => { if (a.pi < 0) { unk[a.s.k] = (unk[a.s.k] || 0) + 1; unkT++; return; } cell[a.pi][a.s.k] = (cell[a.pi][a.s.k] || 0) + 1; colT[a.s.k] = (colT[a.s.k] || 0) + 1; });
+  const known = sum(sel, k => colT[k] || 0);
+  const head = sel.map(k => `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}</th>`).join('');
+  const rows = POS.map((p, i) => ({ p, i, t: sum(sel, k => cell[i][k] || 0) })).filter(r => r.t);
+  const body = rows.map(r => `<tr><th>${esc(r.p)}</th>${sel.map(k => { const n = cell[r.i][k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? `${fmt(n)} <span class="note">(${share(n, colT[k])})</span>` : '·'}</td>`; }).join('')}<td class="num tot">${fmt(r.t)} <span class="note">(${share(r.t, known)})</span></td></tr>`).join('');
+  const foot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(colT[k] || 0)}</td>`).join('')}<td class="num tot">${fmt(known)}</td></tr>`;
+  return `<section class="card"><h2>교육 구분별 직위별 참석 현황</h2><p class="hint">참석 연인원 기준 · 괄호는 해당 교육 구분(세로) 안에서 각 직위가 차지하는 비율${unkT ? ` · 시트1 미반영 교육의 ${fmt(unkT)}명은 직위를 알 수 없어 제외` : ''}</p>
+    <div class="tw"><table><thead><tr><th>직위</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body || `<tr><td colspan="${sel.length + 2}" class="msg">참석 데이터 없음</td></tr>`}</tbody><tfoot>${foot}</tfoot></table></div></section>`;
 }
 // ---- P2 ----
 function p2() {
@@ -529,7 +555,7 @@ function p2() {
   const row = s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}${s.dts.length > 1 ? `<br><span class="note">외 ${s.dts.length - 1}일</span>` : ''}</td>
     <td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td>
     <td class="r num"><b>${s.st === 'done' ? fmt(s.n1) : '–'}</b></td><td class="r"><span class="st ${s.st === 'done' ? 'done' : s.st === 'plan' ? 'plan' : 'warn'}">${stLabel(s.st)}</span></td></tr>`;
-  return `
+  return `<div class="stack">
   <div class="card"><div class="seg">
     <button class="chip" data-k="all" aria-pressed="${S.k === 'all'}">전체</button>
     ${chips(['REG','EMG','TOP','DED'], '직무교육')}<span style="width:8px"></span>${chips(['SEN','PTL'], '관리자교육')}
@@ -540,14 +566,14 @@ function p2() {
     <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(uniq(at))}<small>명</small></div><div class="sub">중복 제거</div></div>
     <div class="kpi"><div class="lab">예정</div><div class="val">${ss.filter(s => s.st === 'plan').length}<small>회</small></div><div class="sub">${ss.filter(s => s.st !== 'done' && s.st !== 'plan' && s.st !== 'none').length ? '집계 필요 ' + ss.filter(s => s.st !== 'done' && s.st !== 'plan' && s.st !== 'none').length + '회' : '미집계 없음'}</div></div>
   </div>
-  <div class="grid2">
-    <section class="card"><h2>월별 참석 연인원${S.k === 'all' ? '' : ' · ' + KN[S.k]}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S.k === 'all' ? legend(KEYS) : ''}${stackChart(rangeMonths(), monthData(at, sel), sel, 210)}</section>
-    <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준</p>
-      <div class="mini">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">데이터 없음</span>'}</div></section>
-  </div>
+  <section class="card"><h2>월별 참석 연인원${S.k === 'all' ? '' : ' · ' + KN[S.k]}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S.k === 'all' ? legend(KEYS) : ''}${stackChart(rangeMonths(), monthData(at, sel), sel, 220, Math.max(560, ($('#view').clientWidth - 40) || 640))}</section>
+  ${monthKeyTable(at, sel)}
+  <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준 · 전체 비율</p>
+    <div class="mini pos">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">데이터 없음</span>'}</div></section>
+  ${posKeyTable(at, sel)}
   <section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">행을 누르면 부서·직위별 참석을 볼 수 있습니다 · 참석 인원은 교육·사번 중복을 제거한 값입니다</p></div>
     <label class="note"><input type="checkbox" id="plan-tg" ${S.plan ? 'checked' : ''}> 예정 교육 포함</label></div>
-    <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th><th>상태</th></tr></thead><tbody>${list.map(row).join('') || '<tr><td colspan="5">해당 교육이 없습니다.</td></tr>'}</tbody></table></div></section>`;
+    <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th><th>상태</th></tr></thead><tbody>${list.map(row).join('') || '<tr><td colspan="5">해당 교육이 없습니다.</td></tr>'}</tbody></table></div></section></div>`;
 }
 
 // ---- P3 ----
@@ -583,14 +609,14 @@ function p3() {
   const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSumV.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
   const dp = S.dept != null ? deptPanel(S.dept) : '';
   return `
-  <div class="card tools">
-    <div class="tg" role="group" aria-label="집계 기준"><button data-metric="rows" aria-pressed="${S.metric === 'rows'}">참석 연인원</button><button data-metric="persons" aria-pressed="${S.metric === 'persons'}">참석 실인원</button></div>
-    <div style="display:flex;gap:8px;align-items:center"><span class="note">${S.metric === 'rows' ? '한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.' : '같은 사람은 몇 개 교육에 참석해도 1명입니다. 그래서 연인원보다 작고, 합계는 전체에서 다시 중복을 제거합니다.'}</span><button class="btn" id="xl">엑셀 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button><button class="btn" id="adm-out">관리자 해제</button>' : '<button class="btn" id="adm">관리자 모드</button>'}</div>
+  <div class="card tools" style="justify-content:flex-end">
+    <div style="display:flex;gap:8px;align-items:center"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button>${S.admin ? '<span class="st done">관리자 모드 사용 중</span><button class="btn" id="roster">참석자 명단 엑셀</button><button class="btn" id="adm-out">관리자 해제</button>' : S.mgr ? mgrTag() : '<button class="btn pri" id="adm" title="참석자 명단(이름·사번) 다운로드, 분류 관리 사용">🔒 관리자 모드</button>'}</div>
   </div>
   <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${unkNote}
   <p class="note">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 목록에 없는 부서→기타).</p>
-  ${dp}`;
+  ${dp}
+  ${mgrSec()}`;
 }
 function deptPanel(i) {
   const at = attF().filter(a => a.di === i);
@@ -598,7 +624,7 @@ function deptPanel(i) {
   const posRows = POS.map((p, pi) => ({p, n: at.filter(a => a.pi === pi).length})).filter(x => x.n);
   const mx = Math.max(1, ...byK.map(x => x.n)), pm = Math.max(1, ...posRows.map(x => x.n));
   return `<section class="card" id="dp"><div class="tools"><h2>${esc(DEPTS[i])} 상세</h2><button class="btn" id="dclose">닫기</button></div>
-    <p class="hint">연인원 ${fmt(at.length)}명 · 실인원 ${fmt(uniq(at))}명</p>
+    <p class="hint">참석 연인원 ${fmt(at.length)}명</p>
     <div class="grid2"><div class="mini">${byK.map(x => `<div class="l"><span class="kc" ${cvar(x.k)}><i></i>${KN[x.k]}</span><span class="b"><i style="width:${x.n / mx * 100}%;background:var(--c-${x.k})"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('')}</div>
     <div class="mini">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pm * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">참석 데이터 없음</span>'}</div></div></section>`;
 }
@@ -642,7 +668,7 @@ function p4() {
   const diff = SESS.filter(s => s.st === 'done' && s.mc != null && s.n1 !== s.mc).sort((a, b) => Math.abs(b.n1 - b.mc) - Math.abs(a.n1 - a.mc));
   const nod = SESS.filter(s => s.st === 'nodata');
   return `
-  <div class="callout warn">시트1(참석자 명단)은 <b>${esc(c.s1max || '')}</b>까지만 들어 있고 시트2(교육별 인원)는 더 최근 교육까지 있습니다. 시트1에 없는 교육 <b>${SESS.filter(s => s.unk).length}회</b>는 시트2 인원으로 집계했으며 부서·직위·실인원은 구분할 수 없습니다.</div>
+  <div class="callout warn">시트1(참석자 명단)은 <b>${esc(c.s1max || '')}</b>까지만 들어 있고 시트2(교육별 인원)는 더 최근 교육까지 있습니다. 시트1에 없는 교육 <b>${SESS.filter(s => s.unk).length}회</b>는 시트2 인원으로 집계했으며 부서·직위는 구분할 수 없습니다.</div>
   <div class="stat3">
     <div class="kpi"><div class="lab">시트2 (교육 단위)</div><div class="val">${c.s2.matched}<small>/ ${c.s2.total}건 분류</small></div><div class="sub">직무·관리자 6개 구분 ${c.s2.target}건 · 분류율 ${pct(c.s2.matched, c.s2.total)}%</div></div>
     <div class="kpi"><div class="lab">시트1 (참석자 행)</div><div class="val">${fmt(c.s1.matched)}<small>/ ${fmt(c.s1.total)}행 분류</small></div><div class="sub">6개 구분 ${fmt(c.s1.target)}행(중복 포함) → 중복 제거 후 ${fmt(ATT.length)}건</div></div>
@@ -793,6 +819,10 @@ function bind() {
   $('#xl')?.addEventListener('click', exportTable);
   $('#roster')?.addEventListener('click', exportRoster);
   $('#adm')?.addEventListener('click', adminOpen);
+  $('#mgr-out')?.addEventListener('click', mgrOut);
+  $('#mgr-xl')?.addEventListener('click', exportMgr);
+  document.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => { S.mv = b.dataset.mv; render(); }));
+  $('#mq')?.addEventListener('input', e => { S.mq = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#mq'); if (q) { q.focus(); q.setSelectionRange(pos, pos); } });
   $('#adm-out')?.addEventListener('click', () => { S.admin = false; S5.token = ''; try { sessionStorage.removeItem('edu_admin'); } catch (_) {} render(); });
 }
 function loadXLSX() {
@@ -821,11 +851,11 @@ function tableRows(metric) {
 async function exportTable() {
   try {
     const X = await loadXLSX(), wb = X.utils.book_new();
-    [['연인원', 'rows'], ['실인원', 'persons']].forEach(([n, m]) => {
+    [['연인원', 'rows']].forEach(([n, m]) => {
       const ws = X.utils.aoa_to_sheet(tableRows(m)); ws['!cols'] = [{wch:24}, ...KEYS.map(() => ({wch:16})), {wch:10}];
       X.utils.book_append_sheet(wb, ws, n);
     });
-    const info = X.utils.aoa_to_sheet([['조회 조건', filterSummary()], ['기준일시', D.updated + ' 갱신'], ['설명', '연인원=교육 참석 횟수의 합 / 실인원=중복을 제거한 사람 수']]);
+    const info = X.utils.aoa_to_sheet([['조회 조건', filterSummary()], ['기준일시', D.updated + ' 갱신'], ['설명', '연인원=교육 참석 횟수의 합']]);
     info['!cols'] = [{wch:12}, {wch:60}]; X.utils.book_append_sheet(wb, info, '조회조건');
     saveWb(X, wb, `부서별_직무교육_참석현황_${condText()}.xlsx`);
   } catch (e) { alert(e.message || e); }
@@ -842,12 +872,12 @@ async function exportRoster() {
     const byDept = {}; rows.forEach(r => (byDept[r[5]] ??= []).push(r));
     const dIdx = Object.keys(byDept).map(Number).sort((a, b) => a - b);
     // 요약
-    const sumRows = [['부서', '교육 구분', '참석 연인원', '참석 실인원']];
+    const sumRows = [['부서', '교육 구분', '참석 연인원']];
     dIdx.forEach(di => order.forEach(k => {
       const rs = byDept[di].filter(r => r[0] === k); if (!rs.length) return;
-      sumRows.push([j.depts[di], nameOf(k), rs.length, new Set(rs.map(r => r[4])).size]);
+      sumRows.push([j.depts[di], nameOf(k), rs.length]);
     }));
-    const sw = X.utils.aoa_to_sheet([[`참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ...sumRows]); sw['!cols'] = [{wch:16}, {wch:24}, {wch:12}, {wch:12}];
+    const sw = X.utils.aoa_to_sheet([[`참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ...sumRows]); sw['!cols'] = [{wch:16}, {wch:24}, {wch:12}];
     X.utils.book_append_sheet(wb, sw, '요약');
     // 부서별 명단
     dIdx.forEach(di => {
@@ -860,7 +890,85 @@ async function exportRoster() {
   } catch (e) { alert(e.message || e); }
   finally { if (btn) { btn.disabled = false; btn.textContent = '참석자 명단 엑셀'; } }
 }
-function adminOpen() { $('#aderr').textContent = ''; $('#adpw').value = ''; $('#adlg').showModal(); setTimeout(() => $('#adpw').focus(), 50); }
+// ---- 부서 관리자(구글 로그인): 본인 부서 참석자 명단 ----
+const GCID = window.EDU_GOOGLE_CLIENT_ID || '';
+S.mgr = null; S.mv = 'list'; S.mq = '';
+const mgrTag = () => `<span class="st done">부서 관리자 · ${esc(S.mgr.name)} (${esc(S.mgr.depts.join('·'))})</span><button class="btn" id="mgr-out">로그아웃</button>`;
+function mgrRows(useSearch) {
+  const q = useSearch ? S.mq.trim() : '';
+  return S.mgr.rows.filter(r => ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]) && (!q || r[3].includes(q) || String(r[4]).includes(q) || r[1].includes(q)))
+    .sort((a, b) => a[2].localeCompare(b[2]) || a[1].localeCompare(b[1]) || a[3].localeCompare(b[3], 'ko'));
+}
+function mgrPeople(rows) {
+  const m = new Map();
+  rows.forEach(r => { const o = m.get(r[4]) || m.set(r[4], {name: r[3], sabun: r[4], pi: r[6], di: r[5], by: {}, n: 0}).get(r[4]); o.by[r[0]] = (o.by[r[0]] || 0) + 1; o.n++; });
+  return [...m.values()].sort((a, b) => a.di - b.di || a.name.localeCompare(b.name, 'ko'));
+}
+function mgrSec() {
+  const m = S.mgr; if (!m) return '';
+  const rows = mgrRows(true), all = mgrRows(false), people = mgrPeople(rows), multi = m.depts.length > 1;
+  const pos = i => esc(m.pos[i] || '');
+  const ks = Object.keys(m.keys);
+  const th = S.mv === 'list'
+    ? `<tr><th>교육일</th><th>구분</th><th>교육명</th>${multi ? '<th>부서</th>' : ''}<th>성명</th><th>사번</th><th>직위</th></tr>`
+    : `<tr><th>성명</th><th>사번</th>${multi ? '<th>부서</th>' : ''}<th>직위</th>${ks.map(k => `<th ${cvar(k)}><span class="cdot"></span>${esc(m.keys[k])}</th>`).join('')}<th class="tot">합계</th></tr>`;
+  const body = S.mv === 'list'
+    ? rows.map(r => `<tr><td class="r">${md(r[2])}</td><td><span class="kc" ${cvar(r[0])}><i></i>${esc(m.keys[r[0]] || r[0])}</span></td><td>${esc(r[1])}</td>${multi ? `<td>${esc(DEPTS[r[5]] || '')}</td>` : ''}<td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${pos(r[6])}</td></tr>`).join('')
+    : people.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.sabun)}</td>${multi ? `<td>${esc(DEPTS[p.di] || '')}</td>` : ''}<td>${pos(p.pi)}</td>${ks.map(k => `<td class="num ${p.by[k] ? '' : 'zero'}">${p.by[k] || '·'}</td>`).join('')}<td class="num tot">${p.n}</td></tr>`).join('');
+  const cols = S.mv === 'list' ? 6 + (multi ? 1 : 0) : 5 + ks.length + (multi ? 1 : 0);
+  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(m.depts.join('·'))} 참석자 명단</h2><p class="hint" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="tg" role="group" aria-label="보기"><button data-mv="list" aria-pressed="${S.mv === 'list'}">교육별 명단</button><button data-mv="person" aria-pressed="${S.mv === 'person'}">직원별 요약</button></div>
+    <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button></div></div>
+    <div class="tools" style="margin:10px 0"><input type="search" id="mq" placeholder="이름·사번·교육명 검색" value="${esc(S.mq)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
+    <span class="note">참석 연인원 <b>${fmt(rows.length)}</b>건${S.mv === 'person' ? ` · 직원 <b>${fmt(people.length)}</b>명` : ''}${rows.length !== all.length ? ` (검색 전 ${fmt(all.length)}건)` : ''}</span></div>
+    <div class="tw tl"><table><thead>${th}</thead><tbody>${body || `<tr><td colspan="${cols}" class="msg">조회 조건에 해당하는 참석자가 없습니다.</td></tr>`}</tbody></table></div>
+    <p class="note" style="margin:8px 0 0">이름·사번이 포함된 개인정보입니다. 내려받은 파일은 부서 내에서만 사용하고 외부로 공유하지 마세요.</p></section>`;
+}
+async function exportMgr() {
+  try {
+    const m = S.mgr, rows = mgrRows(false); if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
+    const X = await loadXLSX(), wb = X.utils.book_new(), ks = Object.keys(m.keys), people = mgrPeople(rows), multi = m.depts.length > 1;
+    const byK = {}; rows.forEach(r => byK[r[0]] = (byK[r[0]] || 0) + 1);
+    const sw = X.utils.aoa_to_sheet([[`${m.depts.join('·')} 참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ['교육 구분', '참석 연인원'], ...ks.filter(k => byK[k]).map(k => [m.keys[k], byK[k]]), ['합계', rows.length]]); sw['!cols'] = [{wch:26}, {wch:14}];
+    X.utils.book_append_sheet(wb, sw, '요약');
+    const pw = X.utils.aoa_to_sheet([['성명', '사번', ...(multi ? ['부서'] : []), '직위', ...ks.map(k => m.keys[k]), '합계'], ...people.map(p => [p.name, p.sabun, ...(multi ? [DEPTS[p.di] || ''] : []), m.pos[p.pi] || '', ...ks.map(k => p.by[k] || 0), p.n])]);
+    pw['!cols'] = [{wch:10}, {wch:10}, ...(multi ? [{wch:12}] : []), {wch:14}, ...ks.map(() => ({wch:16})), {wch:8}]; pw['!freeze'] = {xSplit:0, ySplit:1};
+    X.utils.book_append_sheet(wb, pw, '직원별');
+    const lw = X.utils.aoa_to_sheet([['교육일', '교육 구분', '교육명', ...(multi ? ['부서'] : []), '성명', '사번', '직위'], ...rows.map(r => [r[2], m.keys[r[0]] || r[0], r[1], ...(multi ? [DEPTS[r[5]] || ''] : []), r[3], r[4], m.pos[r[6]] || ''])]);
+    lw['!cols'] = [{wch:12}, {wch:20}, {wch:54}, ...(multi ? [{wch:12}] : []), {wch:10}, {wch:10}, {wch:14}]; lw['!freeze'] = {xSplit:0, ySplit:1};
+    X.utils.book_append_sheet(wb, lw, '참석자 명단');
+    saveWb(X, wb, `${m.depts.join('_')}_참석자명단_${condText()}.xlsx`.replace(/[\\/:*?"<>|]/g, ''));
+  } catch (e) { alert(e.message || e); }
+}
+let GIS_P = null, GIS_INIT = false;
+const loadGIS = () => (window.google && google.accounts && google.accounts.id) ? Promise.resolve() : (GIS_P ||= new Promise((res, rej) => {
+  const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = res;
+  s.onerror = () => { GIS_P = null; rej(new Error('구글 로그인 스크립트를 불러오지 못했습니다. 인터넷 연결을 확인하세요.')); }; document.head.appendChild(s);
+}));
+async function mgrFetch(idToken) {
+  const api = window.EDU_API; if (!api) throw new Error('백엔드(Apps Script)가 연결되지 않았습니다.');
+  const r = await fetch(api, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'myroster', idToken})});
+  const j = await r.json(); if (j.ok === false) throw new Error(j.error || '요청 실패');
+  S.mgr = {name:j.me.name, sabun:j.me.sabun, depts:j.me.depts, rows:j.rows, pos:j.pos, keys:j.keys, built:j.built};
+}
+async function mgrLogin(cred) {
+  $('#gerr').textContent = '확인 중… (명단을 불러오는 데 수십 초 걸릴 수 있습니다)';
+  try { await mgrFetch(cred); try { sessionStorage.setItem('edu_mgr', cred); } catch (_) {} $('#adlg').close(); S.mq = ''; render(); }
+  catch (e) { try { sessionStorage.removeItem('edu_mgr'); } catch (_) {} $('#gerr').textContent = String(e.message || e); }
+}
+async function mgrOpen() {
+  const box = $('#gsec'); $('#gerr').textContent = '';
+  if (!GCID || !window.EDU_API) { box.hidden = true; return; }
+  box.hidden = false;
+  try {
+    await loadGIS();
+    if (!GIS_INIT) { google.accounts.id.initialize({client_id: GCID, callback: r => mgrLogin(r.credential), auto_select: false}); GIS_INIT = true; }
+    $('#gbtn').innerHTML = ''; google.accounts.id.renderButton($('#gbtn'), {theme:'outline', size:'large', text:'signin_with', locale:'ko', width:260});
+  } catch (e) { $('#gerr').textContent = String(e.message || e); }
+}
+function mgrOut() { S.mgr = null; S.mq = ''; try { sessionStorage.removeItem('edu_mgr'); } catch (_) {} try { google.accounts.id.disableAutoSelect(); } catch (_) {} render(); }
+(async () => { try { const t = sessionStorage.getItem('edu_mgr'); if (t && GCID && window.EDU_API) { await mgrFetch(t); render(); } } catch (_) { try { sessionStorage.removeItem('edu_mgr'); } catch (__) {} } })();
+function adminOpen() { mgrOpen(); $('#aderr').textContent = ''; $('#adpw').value = ''; $('#adlg').showModal(); setTimeout(() => $('#adpw').focus(), 50); }
 $('#adf').addEventListener('submit', async e => {
   e.preventDefault();
   const pw = $('#adpw').value.trim(); if (!pw) return;
