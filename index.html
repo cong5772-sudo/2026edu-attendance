@@ -57,6 +57,10 @@ button{font-size:inherit;color:inherit}
 .navlist{display:grid;gap:4px}
 .navbtn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:none;color:rgba(255,255,255,.82);font-weight:600;font-size:14.5px;text-align:left;cursor:pointer}
 .navbtn .ic{width:18px;text-align:center;opacity:.85}
+.prl{display:grid;gap:8px}.pr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.pr .pt{display:grid;gap:3px;min-width:0}.pr .pk{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.pr select:disabled{opacity:.5}.btn:disabled{opacity:.45;cursor:default}.pr .pt b{font-size:13.5px;word-break:keep-all;overflow-wrap:anywhere}
+.pr .pc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.pr select{height:34px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font-size:13px}
+@media (max-width:820px){.pr{grid-template-columns:minmax(0,1fr)}}
 .navbtn:hover{background:rgba(255,255,255,.08);color:#fff}
 .navbtn[aria-current="page"]{background:rgba(255,255,255,.16);color:#fff}
 .fcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px}
@@ -67,7 +71,10 @@ button{font-size:inherit;color:inherit}
 .fgrid{display:grid;gap:14px}
 .fs{display:grid;gap:7px}.fl{font-size:12.5px;font-weight:600;color:var(--ink2)}
 .cg{display:flex;flex-wrap:wrap;gap:6px}
-.cg.q4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.cg.mg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.cg.mg .chip{padding:0}
+.chip:disabled{opacity:.35;cursor:default}.chip:disabled:hover{border-color:var(--line2)}
+.seldis{height:38px;display:flex;align-items:center;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);color:var(--muted);font-size:13px}
+.fsum{margin:-4px 0 12px;font-size:12px;color:var(--accent);font-weight:600;line-height:1.5}
 .fcard .chip{height:32px;padding:0 12px;font-size:13px;font-weight:500}
 .fcard select{height:38px;width:100%;border:1px solid var(--line2);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--ink);font-size:13.5px}
 .fhint{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
@@ -144,7 +151,7 @@ thead th .cdot{display:inline-block;width:8px;height:8px;border-radius:2px;margi
 tbody th{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;font-weight:600}
 thead th:first-child{left:0;z-index:3}
 tbody tr:hover td,tbody tr:hover th{background:var(--sunk)}
-tr.sum td,tr.sum th{background:var(--accent-soft);font-weight:700;border-top:2px solid var(--line2);color:var(--ink)}
+tr.sum td,tr.sum th{background:var(--surface);font-weight:700;border-top:2px solid var(--line2);color:var(--ink)}
 td.zero{color:var(--muted)}
 td.heat{font-weight:600}
 td.tot,th.tot{font-weight:700;border-left:1px solid var(--line2)}
@@ -184,7 +191,7 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   .app{grid-template-columns:minmax(0,1fr);padding-top:14px;gap:14px}
   .side{position:static;max-height:none;overflow:visible}
   .navcard{padding:6px}
-  .navcard .navlist{grid-template-columns:repeat(4,1fr)}
+  .navcard .navlist{grid-template-columns:repeat(5,1fr)}
   .navbtn{flex-direction:column;gap:2px;padding:8px 2px;font-size:11.5px;text-align:center;justify-content:center}
   .side .navfoot{display:none}
   .stat3{grid-template-columns:minmax(0,1fr)}
@@ -216,9 +223,11 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
       <button class="navbtn" data-page="p2"><span class="ic">▦</span>직무·관리자교육</button>
       <button class="navbtn" data-page="p3"><span class="ic">▥</span>부서별 참석현황</button>
       <button class="navbtn" data-page="p4"><span class="ic">✓</span>데이터 점검</button>
+      <button class="navbtn" data-page="p5"><span class="ic">✎</span>분류 관리</button>
     </div></nav>
     <details class="fcard" open>
       <summary>조회 조건 <span class="note" id="f-sum"></span></summary>
+      <div class="fsum" id="f-sum2"></div>
       <div class="fgrid" id="f-side"></div>
     </details>
     <div class="navfoot">
@@ -233,17 +242,21 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   </main>
 </div>
 <dialog id="dlg"><div class="dh"><div><h3 id="dt"></h3><p id="dp"></p></div><button class="x" id="dx" aria-label="닫기">×</button></div><div class="db" id="dbody"></div></dialog>
+<dialog id="adlg"><div class="dh"><div><h3>관리자 모드</h3><p>참석자 명단(이름·사번 포함)은 비밀번호를 입력한 관리자만 받을 수 있습니다.</p></div><button class="x" id="adx" aria-label="닫기">×</button></div>
+  <form class="db" id="adf" method="dialog"><input type="password" id="adpw" placeholder="비밀번호" autocomplete="current-password" style="padding:10px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
+  <p class="note" id="aderr" style="color:var(--crit-ink);margin:0"></p><button class="btn" id="adok" type="submit" style="justify-self:start">확인</button></form></dialog>
 <div id="tip" hidden></div>
 
+<script src="config.js"></script>
 <script src="data.js"></script>
 <script>
 'use strict';
-const D = window.EDU_DATA;
+let D = window.EDU_DATA;
 const KEYS = Object.keys(D.keys);
 const KN = D.keys;
-const GROUP = {REG:'직무교육',EMG:'직무교육',TOP:'직무교육',DED:'직무교육',SEN:'관리자교육',PTL:'관리자교육'};
+const GROUP = {REG:'직무교육',EMG:'직무교육',TOP:'직무교육',DED:'직무교육',SEN:'관리자교육',PTL:'관리자교육',MOV:'부서이동자 교육',SPC:'부서별 특성화 교육'};
 const DEPTS = D.depts, POS = D.pos;
-const S = {page:'p1', from:'', to:'', k:'all', metric:'rows', plan:true, dept:null};
+const S = {page:'p1', k:'all', metric:'rows', plan:true, dept:null, admin:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => (n ?? 0).toLocaleString('ko-KR');
@@ -251,24 +264,28 @@ const md = d => { const [,m,dd] = d.split('-'); return `${+m}/${+dd}`; };
 const cvar = k => `style="--cc:var(--c-${k})"`;
 
 // ---- data prep ----
-const SESS = D.sessions.map(s => {
-  const dts = [].concat(s.dts || []);
-  const unk = s.n1 === 0 && s.n2 > 0; // 시트1 참석자 명단 미반영 교육은 시트2 인원 사용
-  return {...s, dts, unk, n1: unk ? s.n2 : s.n1, sm: (dts[0] || s.d).slice(0, 7), first: dts[0] || s.d};
-});
-const ATT = D.att.map(r => ({sid:r[0], di:r[1], pi:r[2], p:r[3]}));
-SESS.forEach(s => { if (s.unk) for (let i = 0; i < s.n2; i++) ATT.push({sid:s.id, di:-1, pi:-1, p:-(2000000 + s.id * 1000 + i)}); });
-ATT.forEach(a => a.s = SESS[a.sid]);
-const KX = Object.keys(D.keysx || {}), KXN = D.keysx || {};
-const ATTX = (D.attx || []).map(r => ({k:KX[r[0]], di:r[1], pi:r[2], p:r[3], ym:r[4]}));
-const ALLK = [...KEYS, ...KX], ALLN = {...KN, ...KXN};
-const ALLC = {REG:'--c-REG',EMG:'--c-EMG',TOP:'--c-TOP',DED:'--c-DED',SEN:'--c-SEN',PTL:'--c-PTL',MOV:'--c-MOV',SPC:'--c-SPC'};
+let SESS, ATT, KX, KXN, ATTX, ALLK, ALLN;
+function prep(d) {
+  D = d;
+  SESS = d.sessions.map(s => {
+    const dts = [].concat(s.dts || []);
+    const unk = s.n1 === 0 && s.n2 > 0; // 시트1 참석자 명단 미반영 교육은 시트2 인원 사용
+    return {...s, dts, unk, n1: unk ? s.n2 : s.n1, sm: (dts[0] || s.d).slice(0, 7), first: dts[0] || s.d};
+  });
+  ATT = d.att.map(r => ({sid:r[0], di:r[1], pi:r[2], p:r[3]}));
+  SESS.forEach(s => { if (s.unk) for (let i = 0; i < s.n2; i++) ATT.push({sid:s.id, di:-1, pi:-1, p:-(2000000 + s.id * 1000 + i)}); });
+  ATT.forEach(a => a.s = SESS[a.sid]);
+  KX = Object.keys(d.keysx || {}); KXN = d.keysx || {};
+  ATTX = (d.attx || []).map(r => ({k:KX[r[0]], di:r[1], pi:r[2], p:r[3], ym:r[4]}));
+  ALLK = [...KEYS, ...KX]; ALLN = {...KN, ...KXN};
+}
+prep(D);const ALLC = {REG:'--c-REG',EMG:'--c-EMG',TOP:'--c-TOP',DED:'--c-DED',SEN:'--c-SEN',PTL:'--c-PTL',MOV:'--c-MOV',SPC:'--c-SPC'};
 const MONTHS = (() => { const out = []; for (let i = 0; i < 12; i++) { const y = 2026 + Math.floor((2 + i) / 12), m = (2 + i) % 12 + 1; out.push(`${y}-${String(m).padStart(2,'0')}`); } return out; })();
 const ml = m => `${+m.slice(5)}월`;
-S.from = MONTHS[0]; S.to = MONTHS[MONTHS.length - 1];
+const YEARS = [...new Set(MONTHS.map(m => +m.slice(0, 4)))];
 
 // 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
-Object.assign(S, {pm:'all', q:1, grp:'all', unit:'all'});
+Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set()}); // 기준일시(연도)·월·세부부서는 다중 선택
 const GROUPS = [
   ['병동', DEPTS.slice(0, 17)],
   ['중환자실', ['MFICU(MFI)','NICU','MICU','SICU','EICU']],
@@ -278,19 +295,20 @@ const GROUPS = [
   ['전담(PAM)', ['PAM']],
   ['기타', ['기타']]
 ].map(([n, ds]) => [n, ds.map(d => DEPTS.indexOf(d)).filter(i => i >= 0)]);
-const QLAB = ['1분기 (3~5월)','2분기 (6~8월)','3분기 (9~11월)','4분기 (12~2월)'];
-function applyPeriod() {
-  if (S.pm === 'all') { S.from = MONTHS[0]; S.to = MONTHS[MONTHS.length - 1]; }
-  else if (S.pm === 'q') { S.from = MONTHS[(S.q - 1) * 3]; S.to = MONTHS[(S.q - 1) * 3 + 2]; }
-}
 const grpIdx = () => S.grp === 'all' ? null : GROUPS.find(g => g[0] === S.grp)[1];
-const deptActive = () => S.grp !== 'all' || S.unit !== 'all';
-const deptSel = i => i < 0 ? !deptActive() : (S.grp === 'all' || grpIdx().includes(i)) && (S.unit === 'all' || +S.unit === i);
+const deptActive = () => S.grp !== 'all' || S.units.size > 0;
+const deptSel = i => i < 0 ? !deptActive() : (S.grp === 'all' || grpIdx().includes(i)) && (!S.units.size || S.units.has(i));
 let CTX = null; // 부서 조건이 있을 때 교육별 참석 인원
-const inR = s => s.sm >= S.from && s.sm <= S.to;
+const ymOK = ym => { const y = +ym.slice(0, 4), m = +ym.slice(5); return (!S.ys.size || S.ys.has(y)) && (!S.ms.size || S.ms.has(m)); };
+const inR = s => ymOK(s.sm);
 const view = s => !CTX ? s : {...s, n1: CTX[s.id] || 0, st: (CTX[s.id] || 0) > 0 ? 'done' : (s.st === 'plan' ? 'plan' : 'none')};
-const sessF = () => SESS.filter(inR).map(view);
-const attF = () => ATT.filter(a => inR(a.s) && deptSel(a.di));
+const catOK = k => !S.cats.size || S.cats.has(k);
+const sessF = () => SESS.filter(s => inR(s) && catOK(s.k)).map(view);
+const attF = () => ATT.filter(a => inR(a.s) && catOK(a.s.k) && deptSel(a.di));
+const attXF = () => ATTX.filter(a => ymOK(a.ym) && catOK(a.k) && deptSel(a.di));
+const rowsU = () => [...attF().map(a => ({k:a.s.k, m:a.s.sm, p:a.p, di:a.di})), ...attXF().map(a => ({k:a.k, m:a.ym, p:a.p, di:a.di}))]; // 6개 구분 + 부서이동자·부서별 특성화
+const visK = () => ALLK.filter(catOK);
+const GK = [['직무교육', ['REG', 'EMG', 'TOP', 'DED']], ['관리자교육', ['SEN', 'PTL']], ['부서이동자 교육', ['MOV']], ['부서별 특성화 교육', ['SPC']]];
 const sum = (arr, f) => arr.reduce((t, x) => t + f(x), 0);
 
 // ---- shell ----
@@ -298,54 +316,61 @@ const PAGES = {
   p1:['종합 현황','정기직무교육·응급간호술기·주제별 술기·전담간호사 직무교육·선임간호사 교육·파트장 교육 6개 구분의 교육 실시와 참석 현황입니다.'],
   p2:['직무·관리자교육','직무교육(정기·응급·주제별·전담)과 관리자교육(선임간호사·파트장)을 한 화면에서 구분별로 확인합니다.'],
   p3:['부서별 직무교육 참석현황','병동 순서(14A → … → PAM → 기타)에 맞춰 6개 구분별 참석 인원을 정리했습니다.'],
+  p5:['분류 관리','시트에 자동 입력된 교육 중 분류되지 않은 교육을 구분·교육과정명으로 지정합니다. 지정한 내용은 구글시트에 저장되어 다음 집계부터 자동 반영됩니다.'],
   p4:['데이터 점검','교육 분류 결과와 원내교육실시현황과의 차이를 확인합니다. 자동 입력 데이터가 늘어날 때 먼저 살펴볼 페이지입니다.']
 };
 function filterHTML() {
   const opt = (v, t, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(t)}</option>`;
-  const mo = (cur) => MONTHS.map(m => opt(m, m.replace('-', '.'), cur)).join('');
-  const period = S.pm === 'zz'
-    ? `<label>분기<select data-f="q">${QLAB.map((l, i) => opt(i + 1, l, S.q)).join('')}</select></label>`
-    : S.pm === 'm'
-    ? `<label>시작월<select data-f="from">${mo(S.from)}</select></label><label>종료월<select data-f="to">${mo(S.to)}</select></label>`
-    : '';
-  const units = (grpIdx() || DEPTS.map((d, i) => i));
-  const chip = (f, v, t, on) => `<button class="chip" data-f="${f}" data-v="${v}" aria-pressed="${on}">${t}</button>`;
+  const chip = (f, v, t, on, dis) => `<button class="chip" data-f="${f}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}>${t}</button>`;
+  const has = new Set([...SESS.map(s => s.sm), ...ATTX.map(a => a.ym)]);
+  const monthHas = m => YEARS.some(y => (!S.ys.size || S.ys.has(y)) && has.has(`${y}-${String(m).padStart(2, '0')}`));
+  const qOn = q => [1, 2, 3].every(i => S.ms.has((q - 1) * 3 + i));
+  const units = grpIdx() || [];
   const hint = S.page === 'p4' ? '<p class="fhint">데이터 점검 페이지는 조회 조건과 무관하게 전체 데이터를 보여줍니다.</p>' : '';
-  return `<div class="fs"><span class="fl">기간 단위</span><div class="cg">${[['all','전체'],['q','분기'],['m','월']].map(([v, t]) => chip('pm', v, t, S.pm === v)).join('')}</div></div>
-    ${S.pm === 'q' ? `<div class="fs"><span class="fl">분기</span><div class="cg q4">${QLAB.map((l, i) => chip('qv', i + 1, l, S.q === i + 1)).join('')}</div></div>` : ''}
-    ${S.pm === 'm' ? `<div class="fs"><span class="fl">시작월</span><select data-f="from">${mo(S.from)}</select></div><div class="fs"><span class="fl">종료월</span><select data-f="to">${mo(S.to)}</select></div>` : ''}
-    <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체', S.grp)}${GROUPS.map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
-    <div class="fs"><span class="fl">세부부서</span><select data-f="unit">${opt('all', '전체', S.unit)}${units.map(i => opt(i, DEPTS[i], S.unit)).join('')}</select></div>
+  return `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('y', 'all', '전체', !S.ys.size)}${YEARS.map(y => chip('y', y, y + '년', S.ys.has(y))).join('')}</div></div>
+    <div class="fs"><span class="fl">분기</span><div class="cg">${chip('q', 'all', '전체', !S.ms.size)}${[1, 2, 3, 4].map(q => chip('q', q, q + '분기', qOn(q))).join('')}</div></div>
+    <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({length: 12}, (_, i) => i + 1).map(m => chip('m', m, m + '월', S.ms.has(m), !monthHas(m))).join('')}</div></div>
+    <div class="fs"><span class="fl">교육 종류</span><div class="cg">${chip('cg', 'all', '전체', !S.cats.size)}${GK.map(([n, ks]) => chip('cg', n, n, ks.every(k => S.cats.has(k)))).join('')}</div></div>
+    <div class="fs"><span class="fl">교육 구분</span><div class="cg">${KEYS.map(k => chip('ck', k, KN[k], S.cats.has(k))).join('')}</div></div>
+    <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체 부서', S.grp)}${GROUPS.map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
+    <div class="fs"><span class="fl">세부부서</span>${S.grp === 'all' ? '<div class="seldis">부서를 먼저 선택</div>' : `<div class="cg">${chip('u', 'all', '전체', !S.units.size)}${units.map(i => chip('u', i, esc(DEPTS[i]), S.units.has(i))).join('')}</div>`}</div>
     <button class="freset" data-f="reset">조건 초기화</button>
-    <p class="fhint">기준일시 ${esc(D.updated)} 갱신 데이터 · 부서를 고르면 세부부서 목록이 해당 부서군으로 좁혀집니다.</p>${hint}`;
-}function filterSummary() {
-  const p = S.pm === 'all' ? '전체 기간' : S.pm === 'q' ? QLAB[S.q - 1].split(' ')[0] : `${S.from.slice(2).replace('-', '.')}~${S.to.slice(2).replace('-', '.')}`;
-  const d = S.unit !== 'all' ? DEPTS[+S.unit] : S.grp !== 'all' ? S.grp : '전 부서';
-  return `${p} · ${d}`;
+    <p class="fhint">분기·월·세부부서는 여러 개를 함께 선택할 수 있습니다. 기준일시 ${esc(D.updated)} 갱신 데이터</p>${hint}`;
+}
+function filterSummary() {
+  const y = S.ys.size ? [...S.ys].sort().join('·') + '년' : '전체 연도';
+  const m = S.ms.size ? [...S.ms].sort((a, b) => a - b).join('·') + '월' : '전체 월';
+  const u = S.units.size ? ([...S.units].length <= 2 ? [...S.units].map(i => DEPTS[i]).join('·') : S.units.size + '개 부서') : S.grp !== 'all' ? S.grp : '전체 부서';
+  const cs = [...S.cats]; const g1 = GK.find(g => g[1].length === cs.length && g[1].every(k => S.cats.has(k)));
+  const c = !cs.length ? '전체 교육' : g1 ? g1[0] : cs.length + '개 구분';
+  return `${y} · ${m} · ${c} · ${u}`;
 }
 function renderFilters() {
-  const h = filterHTML();
-  $('#f-side').innerHTML = h;
-  $('#f-sum').textContent = filterSummary();
+  $('#f-side').innerHTML = filterHTML();
+  $('#f-sum').textContent = '';
+  $('#f-sum2').textContent = filterSummary();
 }
+const tog = (set, v) => set.has(v) ? set.delete(v) : set.add(v);
 document.addEventListener('click', e => {
-  const b = e.target.closest('button[data-f]'); if (!b) return;
-  if (b.dataset.f === 'pm') { S.pm = b.dataset.v; applyPeriod(); }
-  else if (b.dataset.f === 'qv') { S.q = +b.dataset.v; applyPeriod(); }
-  else if (b.dataset.f === 'reset') Object.assign(S, {pm:'all', q:1, grp:'all', unit:'all'}), applyPeriod();
+  const b = e.target.closest('button[data-f]'); if (!b || b.disabled) return;
+  const f = b.dataset.f, v = b.dataset.v;
+  if (f === 'y') { if (v === 'all') S.ys.clear(); else tog(S.ys, +v); }
+  else if (f === 'q') {
+    if (v === 'all') S.ms.clear();
+    else { const q = +v, ms = [1, 2, 3].map(i => (q - 1) * 3 + i); if (ms.every(x => S.ms.has(x))) ms.forEach(x => S.ms.delete(x)); else ms.forEach(x => S.ms.add(x)); }
+  }
+  else if (f === 'm') tog(S.ms, +v);
+  else if (f === 'cg') { if (v === 'all') S.cats.clear(); else { const ks = GK.find(g => g[0] === v)[1]; if (ks.every(k => S.cats.has(k))) ks.forEach(k => S.cats.delete(k)); else ks.forEach(k => S.cats.add(k)); } }
+  else if (f === 'ck') tog(S.cats, v);
+  else if (f === 'u') { if (v === 'all') S.units.clear(); else tog(S.units, +v); }
+  else if (f === 'reset') { S.ys.clear(); S.ms.clear(); S.cats.clear(); S.units.clear(); S.grp = 'all'; }
   render();
 });
 document.addEventListener('change', e => {
   const t = e.target.closest('select[data-f]'); if (!t) return;
-  const f = t.dataset.f, v = t.value;
-  if (f === 'q') { S.q = +v; applyPeriod(); }
-  else if (f === 'from') { S.from = v; if (S.to < v) S.to = v; }
-  else if (f === 'to') { S.to = v; if (S.from > v) S.from = v; }
-  else if (f === 'grp') { S.grp = v; S.unit = 'all'; }
-  else if (f === 'unit') S.unit = v;
+  if (t.dataset.f === 'grp') { S.grp = t.value; S.units.clear(); }
   render();
 });
-
 function go(p) { if (location.hash !== '#' + p) location.hash = p; else render(); }
 window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES[p]) { S.page = p; render(); window.scrollTo(0, 0); } });
 document.addEventListener('click', e => {
@@ -358,9 +383,9 @@ function render() {
   $('#pt').textContent = PAGES[S.page][0]; $('#ps').textContent = PAGES[S.page][1];
   document.title = PAGES[S.page][0] + ' · 간호교육 참석현황';
   CTX = null;
-  if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
+  if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && catOK(a.s.k) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
   renderFilters();
-  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4})[S.page]();
+  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5})[S.page]();
   bind();
 }
 
@@ -375,29 +400,36 @@ function stackChart(months, byMonth, keys, h = 230) {
   months.forEach((m, i) => {
     let y = H - B; const x = L + i * bw + bw * .18, w = bw * .64; let tot = 0;
     keys.forEach(k => { const v = byMonth[m]?.[k] || 0; tot += v; if (!v) return; const hh = (H - B - T) * v / nice; y -= hh;
-      g += `<rect class="bar" x="${x}" y="${y}" width="${w}" height="${hh}" fill="var(--c-${k})" data-tip="${esc(ml(m))} · ${esc(KN[k])}: ${fmt(v)}명" rx="2"/>`; });
+      g += `<rect class="bar" x="${x}" y="${y}" width="${w}" height="${hh}" fill="var(--c-${k})" data-tip="${esc(ml(m))} · ${esc(ALLN[k])}: ${fmt(v)}명" rx="2"/>`; });
     if (tot) g += `<text class="tot" x="${x + w/2}" y="${y - 4}" text-anchor="middle">${fmt(tot)}</text>`;
     g += `<text x="${x + w/2}" y="${H - 8}" text-anchor="middle">${ml(m)}</text>`;
   });
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 참석 연인원 누적 막대">${g}</svg>`;
 }
-const legend = keys => `<div class="legend">${keys.map(k => `<span><i style="background:var(--c-${k})"></i>${KN[k]}</span>`).join('')}</div>`;
+const legend = keys => `<div class="legend">${keys.map(k => `<span><i style="background:var(--c-${k})"></i>${ALLN[k]}</span>`).join('')}</div>`;
+function monthDataU(rows, keys) {
+  const o = {}; rows.forEach(r => { if (!keys.includes(r.k)) return; (o[r.m] ??= {}); o[r.m][r.k] = (o[r.m][r.k] || 0) + 1; }); return o;
+}
 function monthData(att, keys) {
   const o = {}; att.forEach(a => { if (!keys.includes(a.s.k)) return; (o[a.s.sm] ??= {}); o[a.s.sm][a.s.k] = (o[a.s.sm][a.s.k] || 0) + 1; }); return o;
 }
-const rangeMonths = () => MONTHS.filter(m => m >= S.from && m <= S.to);
+const rangeMonths = () => MONTHS.filter(ymOK);
 const uniq = (att) => new Set(att.filter(a => a.p >= 0).map(a => a.p)).size; // 시트1 미반영(부서 미확인) 인원 제외
 const stLabel = s => ({done:'실시', plan:'예정', zero:'신청자 없음', nodata:'집계 필요', none:'참석 없음'})[s] || s;
 
 // ---- P1 ----
 function p1() {
-  const ss = sessF(), at = attF();
-  const done = ss.filter(s => s.st === 'done');
-  const plan = ss.filter(s => s.st === 'plan');
-  const people = uniq(at);
+  const ss = sessF(), ru = rowsU(), K = visK();
+  const done = ss.filter(s => s.st === 'done'), plan = ss.filter(s => s.st === 'plan');
+  const people = new Set(ru.filter(r => r.p >= 0).map(r => r.p)).size;
   const kpi = (l, v, u, sub) => `<div class="kpi"><div class="lab">${l}</div><div class="val">${v}<small>${u}</small></div><div class="sub">${sub}</div></div>`;
-  const cats = KEYS.map(k => {
-    const a = ss.filter(s => s.k === k), d = a.filter(s => s.st === 'done'), n = at.filter(x => x.s.k === k).length;
+  const hasT = ss.length > 0;
+  const cards = K.map(k => {
+    const n = ru.filter(r => r.k === k).length, u = new Set(ru.filter(r => r.k === k && r.p >= 0).map(r => r.p)).size;
+    if (!KN[k]) return `<div class="catc" ${cvar(k)} style="cursor:default"><div><div class="grp">${GROUP[k]}</div><div class="n">${ALLN[k]}</div></div>
+      <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>참석 연인원</small></div>
+      <small>실인원 ${fmt(u)}명 · 교육 회차는 집계하지 않습니다</small></div>`;
+    const a = ss.filter(s => s.k === k), d = a.filter(s => s.st === 'done');
     const pct = a.length ? Math.round(d.length / a.length * 100) : 0;
     return `<button class="catc" data-cat="${k}" ${cvar(k)}><div><div class="grp">${GROUP[k]}</div><div class="n">${KN[k]}</div></div>
       <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>실시 ${d.length} / 계획 ${a.length}회</small></div>
@@ -409,43 +441,43 @@ function p1() {
   const li = s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span><br>${esc(s.t)}</td><td class="r num">${s.st === 'done' ? fmt(s.n1) + '명' : '예정'}</td></tr>`;
   return `
   <div class="kpis">
-    ${kpi('실시 교육', done.length, '회', `계획 ${ss.length}회 중 · 실시율 ${ss.length ? Math.round(done.length / ss.length * 100) : 0}%`)}
-    ${kpi('참석 연인원', fmt(at.length), '명', `회당 평균 ${done.length ? (at.length / done.length).toFixed(1) : '–'}명`)}
+    ${kpi('실시 교육', hasT ? done.length : '–', hasT ? '회' : '', hasT ? `계획 ${ss.length}회 중 · 실시율 ${Math.round(done.length / ss.length * 100)}% (직무·관리자교육)` : '선택한 구분은 회차를 집계하지 않습니다')}
+    ${kpi('참석 연인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
     ${kpi('참석 실인원', fmt(people), '명', '기간 내 1회 이상 참석(중복 제거)')}
-    ${kpi('예정 교육', plan.length, '회', plan.length ? `다음 ${md(plan.slice().sort((a,b)=>a.d.localeCompare(b.d))[0].d)}` : '예정 없음')}
+    ${kpi('예정 교육', hasT ? plan.length : '–', hasT ? '회' : '', plan.length ? `다음 ${md(plan.slice().sort((a, b) => a.d.localeCompare(b.d))[0].d)}` : '예정 없음')}
   </div>
   <div class="grid2">
-    <section class="card"><h2>월별 참석 연인원</h2><p class="hint">구분별 누적 · 막대를 누르면 값이 표시됩니다</p>${legend(KEYS)}${stackChart(rangeMonths(), monthData(at, KEYS), KEYS)}</section>
-    <section class="card"><h2>구분별 참석 비중</h2><p class="hint">기간 내 참석 연인원 기준</p>${shareBars(at)}</section>
+    <section class="card"><h2>월별 참석 연인원</h2><p class="hint">구분별 누적 · 막대를 누르면 값이 표시됩니다</p>${legend(K)}${stackChart(rangeMonths(), monthDataU(ru, K), K)}</section>
+    <section class="card"><h2>구분별 참석 비중</h2><p class="hint">조회 조건 내 참석 연인원 기준</p>${shareBars(ru, K)}</section>
   </div>
-  <section><h2 class="sech">구분별 실시 현황 <span class="note">(카드를 누르면 상세 페이지로 이동)</span></h2><div class="cats">${cats}</div></section>
+  <section><h2 class="sech">구분별 실시 현황 <span class="note">(직무·관리자교육 카드를 누르면 상세 페이지로 이동)</span></h2><div class="cats">${cards || '<p class="note">조건에 해당하는 구분이 없습니다.</p>'}</div></section>
+  ${monthCat()}
   <div class="grid2">
     <section class="card"><h2>최근 실시 교육</h2><p class="hint">누르면 부서·직위별 참석을 볼 수 있습니다</p><div class="tw" style="max-height:none"><table class="tl"><tbody>${recent.map(li).join('') || '<tr><td>없음</td></tr>'}</tbody></table></div></section>
     <section class="card"><h2>예정 교육</h2><p class="hint">원내교육실시현황의 계획 일정 기준</p><div class="tw" style="max-height:none"><table class="tl"><tbody>${next.map(li).join('') || '<tr><td>예정 없음</td></tr>'}</tbody></table></div></section>
   </div>`;
 }
-function shareBars(at) {
-  const tot = at.length || 1;
-  return `<div class="mini">${KEYS.map(k => { const n = at.filter(a => a.s.k === k).length;
-    return `<div class="l"><span class="kc" ${cvar(k)}><i></i>${KN[k]}</span><span class="b"><i style="width:${n / tot * 100}%;background:var(--c-${k})"></i></span><span class="num" style="text-align:right">${Math.round(n / tot * 100)}%</span></div>`; }).join('')}</div>
-    <p class="note" style="margin-top:12px">직무교육 ${fmt(at.filter(a => GROUP[a.s.k] === '직무교육').length)}명 · 관리자교육 ${fmt(at.filter(a => GROUP[a.s.k] === '관리자교육').length)}명</p>`;
+function shareBars(ru, K) {
+  const tot = ru.length || 1;
+  const sumG = ks => ru.filter(r => ks.includes(r.k)).length;
+  return `<div class="mini">${K.map(k => { const n = ru.filter(r => r.k === k).length;
+    return `<div class="l"><span class="kc" ${cvar(k)}><i></i>${ALLN[k]}</span><span class="b"><i style="width:${n / tot * 100}%;background:var(--c-${k})"></i></span><span class="num" style="text-align:right">${Math.round(n / tot * 100)}%</span></div>`; }).join('')}</div>
+    <p class="note" style="margin-top:12px">${GK.map(([n, ks]) => `${n} ${fmt(sumG(ks))}명`).join(' · ')}</p>`;
 }
-
 function monthCat() {
   const months = rangeMonths();
-  const rows = [];
-  attF().forEach(a => rows.push({k:a.s.k, m:a.s.sm, p:a.p}));
-  ATTX.forEach(a => { if (a.ym >= S.from && a.ym <= S.to && deptSel(a.di)) rows.push({k:a.k, m:a.ym, p:a.p}); });
+  const rows = rowsU(), K = visK();
+
   const cell = {}, colT = {}, rowT = {}, all = S.metric === 'rows' ? 0 : new Set();
   const put = (o, key, p) => { if (S.metric === 'rows') o[key] = (o[key] || 0) + 1; else (o[key] ??= new Set()).add(p); };
   rows.forEach(r => { put(cell, r.m + '|' + r.k, r.p); put(colT, r.k, r.p); put(rowT, r.m, r.p); });
   const v = x => x == null ? 0 : (S.metric === 'rows' ? x : x.size);
   const grand = S.metric === 'rows' ? rows.length : new Set(rows.map(r => r.p)).size;
-  const cmax = {}; ALLK.forEach(k => cmax[k] = Math.max(1, ...months.map(m => v(cell[m + '|' + k]))));
-  const heat = (n, mx, k) => n ? `style="background:color-mix(in srgb,var(--c-${k}) ${Math.round(8 + n / mx * 34)}%,transparent)"` : '';
-  const head = ALLK.map(k => `<th ${cvar(k)}><span class="cdot"></span>${ALLN[k]}</th>`).join('');
-  const body = months.map(m => `<tr><th>${ml(m)}</th>${ALLK.map(k => { const n = v(cell[m + '|' + k]); return `<td class="num heat ${n ? '' : 'zero'}" ${heat(n, cmax[k], k)}>${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot">${v(rowT[m]) ? fmt(v(rowT[m])) : '·'}</td></tr>`).join('');
-  const foot = `<tr class="sum"><th>합계</th>${ALLK.map(k => `<td class="num">${fmt(v(colT[k]))}</td>`).join('')}<td class="num tot">${fmt(grand)}</td></tr>`;
+  const cmax = {}; K.forEach(k => cmax[k] = Math.max(1, ...months.map(m => v(cell[m + '|' + k]))));
+  const heat = () => ''; // 본문 색 바탕 없음
+  const head = K.map(k => `<th ${cvar(k)}><span class="cdot"></span>${ALLN[k]}</th>`).join('');
+  const body = months.map(m => `<tr><th>${ml(m)}</th>${K.map(k => { const n = v(cell[m + '|' + k]); return `<td class="num heat ${n ? '' : 'zero'}" ${heat(n, cmax[k], k)}>${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot">${v(rowT[m]) ? fmt(v(rowT[m])) : '·'}</td></tr>`).join('');
+  const foot = `<tr class="sum"><th>합계</th>${K.map(k => `<td class="num">${fmt(v(colT[k]))}</td>`).join('')}<td class="num tot">${fmt(grand)}</td></tr>`;
   return `<section class="card"><div class="tools"><div><h2>월별 구분별 참석 인원</h2><p class="hint" style="margin:0">정기직무교육 · 응급간호술기 · 주제별 술기 · 전담간호사 직무교육 · 선임간호사 교육 · 파트장 교육 · 부서이동자 교육 · 부서별 특성화 교육 (조회 조건 반영)</p></div>
     <div class="tg" role="group" aria-label="집계 기준"><button data-metric="rows" aria-pressed="${S.metric === 'rows'}">연인원</button><button data-metric="persons" aria-pressed="${S.metric === 'persons'}">실인원</button></div></div>
     <div class="tw" style="margin-top:10px"><table><thead><tr><th>월</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
@@ -480,7 +512,6 @@ function p2() {
     <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준</p>
       <div class="mini">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">데이터 없음</span>'}</div></section>
   </div>
-  ${monthCat()}
   <section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">행을 누르면 부서·직위별 참석을 볼 수 있습니다 · 참석 인원은 교육·사번 중복을 제거한 값입니다</p></div>
     <label class="note"><input type="checkbox" id="plan-tg" ${S.plan ? 'checked' : ''}> 예정 교육 포함</label></div>
     <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th><th>상태</th></tr></thead><tbody>${list.map(row).join('') || '<tr><td colspan="5">해당 교육이 없습니다.</td></tr>'}</tbody></table></div></section>`;
@@ -508,18 +539,20 @@ function p3() {
   const {cells, totals, colSum, allTot, unk, unkTot} = matrix();
   const colMax = KEYS.map((k, ki) => Math.max(1, ...cells.map(r => r[ki])));
   const totMax = Math.max(1, ...totals);
-  const heat = (v, mx, k) => v ? `style="background:color-mix(in srgb,var(${k ? '--c-' + k : '--accent'}) ${Math.round(8 + v / mx * 34)}%,transparent)"` : '';
+  const KI = KEYS.map((k, i) => i).filter(i => catOK(KEYS[i]));
+  const cellsV = cells.map(r => KI.map(i => r[i])), colSumV = KI.map(i => colSum[i]), unkV = KI.map(i => unk[i]);
+  const heat = () => ''; // 본문 색 바탕 없음
   const ss = sessF();
-  const head = KEYS.map(k => { const n = ss.filter(s => s.k === k && s.st === 'done').length; return `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}<br><span class="note num">${n}회 실시</span></th>`; }).join('');
-  const body = DEPTS.map((d, i) => !deptSel(i) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cells[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
-  const unkHtml = unkTot ? `<tr><th title="시트1 참석자 명단에 아직 없는 교육(시트2 인원)">부서 미확인*</th>${unk.map(v => `<td class="num ${v ? '' : 'zero'}">${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot">${fmt(unkTot)}</td></tr>` : '';
+  const head = KI.map(i => { const k = KEYS[i]; const n = ss.filter(s => s.k === k && s.st === 'done').length; return `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}<br><span class="note num">${n}회 실시</span></th>`; }).join('');
+  const body = DEPTS.map((d, i) => !deptSel(i) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cellsV[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
+  const unkHtml = unkTot ? `<tr><th title="시트1 참석자 명단에 아직 없는 교육(시트2 인원)">부서 미확인*</th>${unkV.map(v => `<td class="num ${v ? '' : 'zero'}">${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot">${fmt(unkTot)}</td></tr>` : '';
   const unkNote = unkTot ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : '';
-  const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSum.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
+  const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSumV.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
   const dp = S.dept != null ? deptPanel(S.dept) : '';
   return `
   <div class="card tools">
     <div class="tg" role="group" aria-label="집계 기준"><button data-metric="rows" aria-pressed="${S.metric === 'rows'}">참석 연인원</button><button data-metric="persons" aria-pressed="${S.metric === 'persons'}">참석 실인원</button></div>
-    <div style="display:flex;gap:8px;align-items:center"><span class="note">${S.metric === 'rows' ? '교육별 참석 건수의 합 (같은 사람이 여러 교육에 참석하면 각각 계산)' : '구분 안에서 중복을 제거한 인원 (합계도 전체 기준 중복 제거)'}</span><button class="btn" id="csv">CSV 저장</button></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="note">${S.metric === 'rows' ? '한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.' : '같은 사람은 몇 개 교육에 참석해도 1명입니다. 그래서 연인원보다 작고, 합계는 전체에서 다시 중복을 제거합니다.'}</span><button class="btn" id="xl">엑셀 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button><button class="btn" id="adm-out">관리자 해제</button>' : '<button class="btn" id="adm">관리자 모드</button>'}</div>
   </div>
   <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${unkNote}
@@ -569,6 +602,95 @@ function p4() {
     <div class="mini">${c.etcDept.map(e => `<div class="l" style="grid-template-columns:160px minmax(0,1fr) 38px"><span>${esc(e.d)}</span><span class="b"><i style="width:${e.n / c.etcDept[0].n * 100}%"></i></span><span class="num" style="text-align:right">${e.n}</span></div>`).join('')}</div></section>`;
 }
 
+// ---- P5: 분류 관리 (수동 분류) ----
+const S5 = {token: (() => { try { return localStorage.getItem('edu_token') || ''; } catch (_) { return ''; } })(), data:null, loading:false, msg:'', q:'', hideNew:true, sel:{}};
+// 교육과정분류기준 시트와 같은 3단계(구분 > 교육과정명 > 교육과정명-2). 서버가 내려주는 값을 우선 사용합니다.
+const TAX_FB = [
+  ['신규간호사 교육','역량강화 적응지원 교육','A-package 교육(홀수달)'],['신규간호사 교육','역량강화 적응지원 교육','B-package 교육(짝수달)'],
+  ['재직간호사 교육','직무교육','정기직무교육'],['재직간호사 교육','직무교육','응급간호술기'],['재직간호사 교육','직무교육','주제별 술기'],
+  ['재직간호사 교육','부서별 특성화 교육',''],['재직간호사 교육','관리자교육','Team Charge 교육'],['재직간호사 교육','관리자교육','선임간호사 교육'],
+  ['재직간호사 교육','관리자교육','파트장 교육'],['재직간호사 교육','관리자교육','승진자 교육'],['재직간호사 교육','부서이동자 교육',''],['재직간호사 교육','기타 교육',''],
+  ['전담간호사 교육','입문교육',''],['전담간호사 교육','직무교육',''],['간호간병통합서비스병동 교육','입문 교육',''],['간호간병통합서비스병동 교육','정기 필수교육','']
+];
+const EXC = '제외';
+const taxOf = () => (S5.data && S5.data.tax) || TAX_FB;
+const gList = () => [...new Set(taxOf().map(t => t[0]))];
+const c1List = g => [...new Set(taxOf().filter(t => t[0] === g).map(t => t[1]))];
+const c2List = (g, c1) => taxOf().filter(t => t[0] === g && t[1] === c1).map(t => t[2]);
+const tripleOf = code => { const i = S5.data && S5.data.codes && S5.data.codes[code]; return i ? [i.g, i.c1, i.c2] : ['', '', '']; };
+const selOf = x => S5.sel[x.title] || (x.suggest ? tripleOf(x.suggest) : ['', '', '']);
+const selDone = s => s[0] === EXC || (s[0] && s[1] && c2List(s[0], s[1]).includes(s[2] || ''));
+const pathText = s => s[0] === EXC ? '제외 (대시보드에 반영 안 함)' : [s[0], s[1], s[2]].filter(Boolean).join(' › ');
+async function api5(method, params, body) {
+  const api = window.EDU_API;
+  if (!api) throw new Error('백엔드 주소(config.js의 EDU_API)가 아직 설정되지 않았습니다.');
+  const url = api + (api.includes('?') ? '&' : '?') + new URLSearchParams(params || {}).toString();
+  const r = await fetch(method === 'GET' ? url : api, method === 'GET' ? {cache:'no-store'} : {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({token:S5.token, ...body})});
+  const j = await r.json(); if (j.ok === false) throw new Error(j.error || '요청 실패'); return j;
+}
+async function load5() {
+  S5.loading = true; S5.msg = ''; render();
+  try { S5.data = await api5('GET', {action:'pending', token:S5.token}); } catch (e) { S5.data = null; S5.msg = String(e.message || e); }
+  S5.loading = false; render();
+}
+function p5() {
+  if (!window.EDU_API) return `<div class="callout warn">분류 관리는 구글 시트와 연결된 백엔드(Apps Script)가 있어야 동작합니다. 연결 전에는 이 화면을 사용할 수 없습니다.</div>`;
+  const d = S5.data;
+  const head = `<section class="card"><h2>관리 토큰</h2><p class="hint">시트 소유자만 아는 토큰입니다. 이 브라우저에만 저장됩니다.</p>
+    <div class="tools"><input type="password" id="tk" placeholder="관리 토큰" value="${esc(S5.token)}" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
+    <button class="btn" data-a="tk">목록 불러오기</button><button class="btn" data-a="rb">시트에서 다시 집계</button></div>
+    ${S5.msg ? `<p class="note" style="margin-top:8px;color:var(--crit-ink)">${esc(S5.msg)}</p>` : ''}${S5.loading ? '<p class="note" style="margin-top:8px">처리 중… (시트 집계에 수십 초 걸릴 수 있습니다)</p>' : ''}</section>`;
+  if (!d) return head;
+  const q = S5.q.trim().toLowerCase();
+  const list = d.pending.filter(x => (!S5.hideNew || !/신규 교직원/.test(x.code)) && (!q || x.title.toLowerCase().includes(q)));
+  const opts = (arr, cur, ph) => `<option value="">${ph}</option>` + arr.map(v => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  const row = x => {
+    const s = selOf(x), g = s[0], c1 = s[1];
+    const c1s = g && g !== EXC ? c1List(g) : [], c2s = c1 ? c2List(g, c1) : [];
+    const noC2 = c1 && c2s.length === 1 && c2s[0] === '';
+    return `<div class="pr" data-t="${esc(x.title)}">
+      <div class="pt"><label class="pk"><input type="checkbox" data-chk="1"> <b>${esc(x.title)}</b></label><span class="note">${esc(x.code)} · ${x.rows}건 · 참석 합계 ${fmt(x.sum)}명 · ${md(x.first)}${x.first !== x.last ? '~' + md(x.last) : ''}${x.suggest ? ` · <span class="st done">추천: ${esc(pathText(tripleOf(x.suggest)))}</span>` : ''}</span></div>
+      <div class="pc">
+        <select data-lv="1" aria-label="구분">${opts([...gList(), EXC], g, '구분')}</select>
+        <select data-lv="2" aria-label="교육과정명"${c1s.length ? '' : ' disabled'}>${opts(c1s, c1, '교육과정명')}</select>
+        <select data-lv="3" aria-label="교육과정명-2"${c1 && !noC2 ? '' : ' disabled'}>${noC2 ? '<option value="">(해당 없음)</option>' : opts(c2s, s[2], '교육과정명-2')}</select>
+        <button class="btn" data-a="sv"${selDone(s) ? '' : ' disabled'}>저장</button><button class="btn" data-a="ex" title="대시보드에 반영할 필요가 없는 교육">제외</button></div></div>`;
+  };
+  const man = d.manual.map(m => `<tr><td>${esc(m.title)}</td><td>${esc(m.g === EXC ? '제외 (대시보드에 반영 안 함)' : [m.g, m.c1, m.c2].filter(Boolean).join(' › '))}</td><td class="r">${esc(String(m.at || '').slice(0, 10))}</td><td class="r"><button class="btn" data-a="un" data-t="${esc(m.title)}">해제</button></td></tr>`).join('');
+  return head + `
+  <section class="card"><div class="tools"><div><h2>분류되지 않은 교육 <span class="note">${list.length}건</span></h2><p class="hint" style="margin:0">구분 → 교육과정명 → 교육과정명-2 순서로 고르고 「저장」하면 같은 교육명은 앞으로 자동 분류됩니다. 대시보드에 필요 없는 교육은 「제외」를 누르세요. 시트 기준 ${esc(d.built || '')}</p></div></div>
+    <div class="tools" style="margin:10px 0"><input type="search" id="q5" placeholder="교육명 검색" value="${esc(S5.q)}" style="flex:1;min-width:180px">
+    <label class="note"><input type="checkbox" id="hn" ${S5.hideNew ? 'checked' : ''}> 신규 교직원 교육 숨김</label>
+    <button class="btn" data-a="bex">선택 항목 제외</button></div>
+    <div class="prl">${list.map(row).join('') || '<p class="note">분류할 교육이 없습니다.</p>'}</div></section>
+  <section class="card"><h2>수동 분류 목록 <span class="note">${d.manual.length}건</span></h2><p class="hint">해제하면 자동 분류 규칙으로 되돌아갑니다.</p>
+    <div class="tw tl"><table><thead><tr><th>교육명</th><th>분류</th><th>등록일</th><th></th></tr></thead><tbody>${man || '<tr><td colspan="4">없음</td></tr>'}</tbody></table></div></section>`;
+}
+async function post5(items, msgOk) {
+  S5.loading = true; S5.msg = ''; render();
+  await api5('POST', {}, {action:'classify', items});
+  await loadRemote(); await load5();
+}
+async function act5(el) {
+  const a = el.dataset.a;
+  try {
+    if (a === 'tk') { S5.token = $('#tk').value.trim(); try { localStorage.setItem('edu_token', S5.token); } catch (_) {} await load5(); return; }
+    if (a === 'rb') { S5.msg = ''; S5.loading = true; render(); await api5('POST', {}, {action:'rebuild'}); await loadRemote(); await load5(); return; }
+    const row = el.closest('.pr'), title = row && row.dataset.t;
+    if (a === 'sv') {
+      const x = S5.data.pending.find(p => p.title === title), s = selOf(x);
+      if (!selDone(s)) { S5.msg = '구분, 교육과정명, 교육과정명-2를 모두 선택하세요.'; render(); return; }
+      await post5([{title, g:s[0], c1:s[1], c2:s[2] || ''}]); return;
+    }
+    if (a === 'ex') { await post5([{title, g:EXC}]); return; }
+    if (a === 'bex') {
+      const titles = [...document.querySelectorAll('.pr [data-chk]:checked')].map(c => c.closest('.pr').dataset.t);
+      if (!titles.length) { S5.msg = '제외할 교육을 먼저 체크하세요.'; render(); return; }
+      await post5(titles.map(t => ({title:t, g:EXC}))); return;
+    }
+    if (a === 'un') { S5.loading = true; render(); await api5('POST', {}, {action:'unclassify', titles:[el.dataset.t]}); await loadRemote(); await load5(); }
+  } catch (e) { S5.loading = false; S5.msg = String(e.message || e); render(); }
+}
 // ---- interactions ----
 function openSession(id) {
   const s = SESS[id], at = ATT.filter(a => a.sid === id);
@@ -589,17 +711,103 @@ function bind() {
   document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.k; render(); }));
   document.querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { S.metric = b.dataset.metric; render(); }));
   document.querySelectorAll('[data-dept]').forEach(r => r.addEventListener('click', () => { S.dept = +r.dataset.dept; render(); $('#dp')?.scrollIntoView({behavior:'smooth', block:'nearest'}); }));
+  document.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act5(b)));
+  document.querySelectorAll('.pr select[data-lv]').forEach(s => s.addEventListener('change', () => {
+    const row = s.closest('.pr'), t = row.dataset.t, x = S5.data.pending.find(p => p.title === t), cur = selOf(x).slice();
+    const lv = +s.dataset.lv, v = s.value;
+    if (lv === 1) S5.sel[t] = [v, '', ''];
+    else if (lv === 2) { const c2s = c2List(cur[0], v); S5.sel[t] = [cur[0], v, c2s.length === 1 && c2s[0] === '' ? '' : '']; }
+    else S5.sel[t] = [cur[0], cur[1], v];
+    render();
+  }));  $('#q5')?.addEventListener('change', e => { S5.q = e.target.value; render(); });
+  $('#hn')?.addEventListener('change', e => { S5.hideNew = e.target.checked; render(); });
   $('#plan-tg')?.addEventListener('change', e => { S.plan = e.target.checked; render(); });
   $('#dclose')?.addEventListener('click', () => { S.dept = null; render(); });
-  $('#csv')?.addEventListener('click', csv);
+  $('#xl')?.addEventListener('click', exportTable);
+  $('#roster')?.addEventListener('click', exportRoster);
+  $('#adm')?.addEventListener('click', adminOpen);
+  $('#adm-out')?.addEventListener('click', () => { S.admin = false; S5.token = ''; try { sessionStorage.removeItem('edu_admin'); } catch (_) {} render(); });
 }
-function csv() {
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => res(window.XLSX); s.onerror = () => rej(new Error('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.'));
+    document.head.appendChild(s);
+  });
+}
+const sheetName = n => String(n).replace(/[\[\]\*\?\/\\:]/g, '').slice(0, 31) || 'sheet';
+const condText = () => filterSummary().replace(/ · /g, '_').replace(/[\\/:*?"<>|]/g, '');
+function saveWb(X, wb, name) { X.writeFile(wb, name); }
+function tableRows(metric) {
+  const keep = S.metric; S.metric = metric;
   const {cells, totals, colSum, allTot, unk, unkTot} = matrix();
-  const rows = [['부서', ...KEYS.map(k => KN[k]), '합계'], ...DEPTS.map((d, i) => [d, ...cells[i], totals[i]]), ...(unkTot ? [['부서 미확인', ...unk, unkTot]] : []), ['합계', ...colSum, allTot]];
-  const text = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/csv;charset=utf-8'}));
-  a.download = `부서별_직무교육_참석현황_${S.metric === 'rows' ? '연인원' : '실인원'}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  S.metric = keep;
+  const KI = KEYS.map((k, i) => i).filter(i => catOK(KEYS[i])), pick = r => KI.map(i => r[i]);
+  const rows = [['부서', ...KI.map(i => KN[KEYS[i]]), '합계']];
+  DEPTS.forEach((d, i) => { if (deptSel(i)) rows.push([d, ...pick(cells[i]), totals[i]]); });
+  if (unkTot) rows.push(['부서 미확인(시트1 미반영)', ...pick(unk), unkTot]);
+  rows.push(['합계', ...pick(colSum), allTot]);
+  return rows;
 }
+async function exportTable() {
+  try {
+    const X = await loadXLSX(), wb = X.utils.book_new();
+    [['연인원', 'rows'], ['실인원', 'persons']].forEach(([n, m]) => {
+      const ws = X.utils.aoa_to_sheet(tableRows(m)); ws['!cols'] = [{wch:24}, ...KEYS.map(() => ({wch:16})), {wch:10}];
+      X.utils.book_append_sheet(wb, ws, n);
+    });
+    const info = X.utils.aoa_to_sheet([['조회 조건', filterSummary()], ['기준일시', D.updated + ' 갱신'], ['설명', '연인원=교육 참석 횟수의 합 / 실인원=중복을 제거한 사람 수']]);
+    info['!cols'] = [{wch:12}, {wch:60}]; X.utils.book_append_sheet(wb, info, '조회조건');
+    saveWb(X, wb, `부서별_직무교육_참석현황_${condText()}.xlsx`);
+  } catch (e) { alert(e.message || e); }
+}
+async function exportRoster() {
+  const btn = $('#roster'); if (btn) { btn.disabled = true; btn.textContent = '명단 불러오는 중…'; }
+  try {
+    const [X, j] = await Promise.all([loadXLSX(), api5('GET', {action:'roster', token:S5.token})]);
+    const order = [...Object.keys(KN), ...Object.keys(j.keys || {}).filter(k => !(k in KN))];
+    const nameOf = k => (j.keys || {})[k] || KN[k] || k;
+    const rows = j.rows.filter(r => ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]));
+    if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
+    const wb = X.utils.book_new();
+    const byDept = {}; rows.forEach(r => (byDept[r[5]] ??= []).push(r));
+    const dIdx = Object.keys(byDept).map(Number).sort((a, b) => a - b);
+    // 요약
+    const sumRows = [['부서', '교육 구분', '참석 연인원', '참석 실인원']];
+    dIdx.forEach(di => order.forEach(k => {
+      const rs = byDept[di].filter(r => r[0] === k); if (!rs.length) return;
+      sumRows.push([j.depts[di], nameOf(k), rs.length, new Set(rs.map(r => r[4])).size]);
+    }));
+    const sw = X.utils.aoa_to_sheet([[`참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ...sumRows]); sw['!cols'] = [{wch:16}, {wch:24}, {wch:12}, {wch:12}];
+    X.utils.book_append_sheet(wb, sw, '요약');
+    // 부서별 명단
+    dIdx.forEach(di => {
+      const list = byDept[di].slice().sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]) || a[2].localeCompare(b[2]) || a[3].localeCompare(b[3], 'ko'));
+      const aoa = [['교육 구분', '교육명', '교육일', '성명', '사번', '직위'], ...list.map(r => [nameOf(r[0]), r[1], r[2], r[3], r[4], j.pos[r[6]] || ''])];
+      const ws = X.utils.aoa_to_sheet(aoa); ws['!cols'] = [{wch:20}, {wch:54}, {wch:12}, {wch:10}, {wch:10}, {wch:14}]; ws['!freeze'] = {xSplit:0, ySplit:1};
+      X.utils.book_append_sheet(wb, ws, sheetName(j.depts[di]));
+    });
+    saveWb(X, wb, `참석자명단_${condText()}.xlsx`);
+  } catch (e) { alert(e.message || e); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '참석자 명단 엑셀'; } }
+}
+function adminOpen() { $('#aderr').textContent = ''; $('#adpw').value = ''; $('#adlg').showModal(); setTimeout(() => $('#adpw').focus(), 50); }
+$('#adf').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = $('#adpw').value.trim(); if (!pw) return;
+  if (!window.EDU_API) { $('#aderr').textContent = '백엔드(Apps Script)가 아직 연결되지 않아 사용할 수 없습니다.'; return; }
+  $('#adok').disabled = true; $('#aderr').textContent = '확인 중…';
+  try {
+    S5.token = pw; await api5('GET', {action:'verify', token:pw});
+    S.admin = true; try { sessionStorage.setItem('edu_admin', pw); } catch (_) {}
+    $('#adlg').close(); render();
+  } catch (err) { S5.token = ''; $('#aderr').textContent = String(err.message || err); }
+  $('#adok').disabled = false;
+});
+$('#adx').addEventListener('click', () => $('#adlg').close());
+(() => { try { const pw = sessionStorage.getItem('edu_admin'); if (pw && window.EDU_API) { S5.token = pw; S.admin = true; } } catch (_) {} })();
 $('#dx').addEventListener('click', () => $('#dlg').close());
 $('#dlg').addEventListener('click', e => { if (e.target === $('#dlg')) $('#dlg').close(); });
 // tooltip (hover & tap)
@@ -608,12 +816,27 @@ document.addEventListener('pointerover', e => { const t = e.target.closest('[dat
 document.addEventListener('pointermove', e => { if (tip.hidden) return; tip.style.left = Math.min(innerWidth - 270, e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
 document.addEventListener('click', e => { const t = e.target.closest('[data-tip]'); if (t) { tip.textContent = t.dataset.tip; tip.hidden = false; tip.style.left = Math.min(innerWidth - 270, e.clientX + 8) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; } else tip.hidden = true; });
 
-$('#refresh').addEventListener('click', async e => { const b = e.currentTarget; b.classList.add('spin'); b.disabled = true; try { await fetch('data.js?t=' + Date.now(), {cache:'reload'}); } catch (_) {} location.reload(); });
-$('#asof').textContent = D.asof; $('#upd').textContent = D.updated;
-applyPeriod();
+$('#refresh').addEventListener('click', async e => {
+  const b = e.currentTarget; b.classList.add('spin'); b.disabled = true;
+  if (window.EDU_API) { await loadRemote(); render(); }
+  else { try { await fetch('data.js?t=' + Date.now(), {cache:'reload'}); } catch (_) {} location.reload(); return; }
+  b.classList.remove('spin'); b.disabled = false;
+});
+function stamp() { $('#asof').textContent = (D.checks && D.checks.s1max > D.asof) ? D.checks.s1max : D.asof; $('#upd').textContent = D.built || D.updated; }
+async function loadRemote() {
+  const api = window.EDU_API; if (!api) return false;
+  try {
+    const r = await fetch(api + (api.includes('?') ? '&' : '?') + 'action=data&t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    if (j && j.sessions) { prep(j); stamp(); return true; }
+  } catch (_) {}
+  return false;
+}
+stamp();
 if (innerWidth <= 820) document.querySelector('.fcard').removeAttribute('open');
 const h = location.hash.slice(1); if (PAGES[h]) S.page = h;
 render();
+loadRemote().then(ok => { if (ok) render(); });
 </script>
 </body>
 </html>
