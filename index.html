@@ -232,6 +232,19 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   .sech{flex-wrap:wrap}.sech .note{flex:1 1 100%;font-weight:400}
   .card.tools>div{flex-wrap:wrap}.card.tools{justify-content:flex-start!important}
 }
+/* 4페이지(데이터 점검): 조치 카드·위치 표시 */
+.todo{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.todo .t{display:grid;gap:6px;align-content:start;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.todo .t .n{font-size:28px;font-weight:700;line-height:1.1}.todo .t .n small{font-size:13px;font-weight:500;color:var(--ink2);margin-left:3px}
+.todo .t.crit{border-color:#e9b4b4;background:#fdf6f6}.todo .t.crit .n{color:var(--crit-ink)}
+.todo .t.warn .n{color:#b45309}.todo .t.ok .n{color:var(--good-ink)}
+.todo .t .l{font-weight:600;font-size:13.5px;line-height:1.4}
+.todo .acts{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.where{display:inline-block;max-width:100%;font-size:12px;color:var(--ink2);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:3px 8px;line-height:1.5}.where b{color:var(--navy);font-weight:700}
+.go{background:none;border:0;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;cursor:pointer}.go:hover{text-decoration:underline}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.tag.crit{background:#fdecec;border-color:#e9b4b4;color:var(--crit-ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .todo .t.crit{background:#2a1618;border-color:#5a2a2e}:root:not([data-theme="light"]) .tag.crit{background:#2a1618;border-color:#5a2a2e}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 #login{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:24px;background:var(--bg);overflow:auto}
 body.locked{overflow:hidden}
@@ -673,53 +686,96 @@ function deptPanel(i) {
 }
 
 // ---- P4 ----
-const PLAN_URL = 'https://docs.google.com/spreadsheets/d/1_ZDq4EOWfQiGtBBU_Eb-zpCG4-5ne5LCbOyzvvRKWnQ/edit#gid=0&range=A';
+// 점검 항목마다 「어느 시트 › 어느 탭 › 어느 행·열」을 고쳐야 하는지 보여 줍니다.
+const PLAN_ID = '1_ZDq4EOWfQiGtBBU_Eb-zpCG4-5ne5LCbOyzvvRKWnQ', PLAN_GID = 1443995525;      // 업무수행 시트 › 원내교육실시현황 탭
+const RAW_ID = '153cNYpbycU29T6piyjB_sW9rUGPSgRomdsNP-iXMVyE', RAW_GID = {s1: 0, s2: 1796665202}; // 부서별교육참석명단 시트 › 시트1 / 시트2
+const planUrl = range => `https://docs.google.com/spreadsheets/d/${PLAN_ID}/edit#gid=${PLAN_GID}${range ? '&range=' + range : ''}`;
+const rawUrl = tab => `https://docs.google.com/spreadsheets/d/${RAW_ID}/edit#gid=${RAW_GID[tab]}`;
+const gl = (href, text) => `<a class="go" href="${href}" target="_blank" rel="noopener">${text} ↗</a>`;
+const SH_PLAN = '업무수행 시트', TB_PLAN = '원내교육실시현황', SH_RAW = '부서별교육참석명단 시트';
+const where = (sheet, tab, extra) => `<span class="where"><b>${sheet}</b> › ${tab}${extra ? ' › ' + extra : ''}</span>`;
 const MK = {cnt_blank:'이수인원 누락', cnt_diff:'이수인원 불일치', no_rec:'참석기록 없음', date_diff:'일자 불일치', nodate:'일시 오류', unreg:'원내현황 미등록', blank_past:'실시 여부 미확인', future_rec:'예정일에 기록', min_blank:'시수 누락', tg_blank:'대상 누락'};
+// 항목별로 고칠 열(원내교육실시현황 탭: D 교육주제 · E 교육대상 · F 교육일시 · H 총 시수 · I 이수인원)과 할 일
+const MK_FIX = {
+  cnt_blank:  {col:'I', cn:'이수인원',          act:'이수인원을 입력하세요.'},
+  cnt_diff:   {col:'I', cn:'이수인원',          act:'시트2 참석 인원을 확인해 이수인원을 맞추세요.'},
+  no_rec:     {col:'F', cn:'교육일시·교육주제',  act:'교육일자·교육명이 시트1·시트2와 같은지 확인하세요.'},
+  date_diff:  {col:'F', cn:'교육일시',          act:'교육일시를 시트 참석일에 맞게 고치세요.'},
+  unreg:      {col:'D', cn:'교육주제',          act:'이 탭에 교육 행을 추가하거나 교육명을 맞추세요.'},
+  blank_past: {col:'I', cn:'이수인원',          act:'이수인원을 입력하세요(미실시면 비고에 표시).'},
+  future_rec: {col:'F', cn:'교육일시',          act:'예정일보다 먼저 참석 기록이 있습니다. 일자를 확인하세요.'},
+  min_blank:  {col:'H', cn:'총 시수(분)',       act:'시수를 입력하세요.'},
+  tg_blank:   {col:'E', cn:'교육대상',          act:'교육대상을 입력하세요.'},
+  nodate:     {col:'F', cn:'교육일시',          act:'교육일시 형식을 확인하세요.'}
+};
+const sevTag = x => x.sev === 'err' ? '<span class="tag crit">수정 필요</span>' : '<span class="tag">확인 권장</span>';
 function masterSec() {
   const L = D.checks.master;
-  if (!L) return `<section class="card"><h2>원내교육실시현황 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
+  if (!L) return `<section class="card" id="sec-master"><h2>원내교육실시현황 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
   const err = L.filter(x => x.sev === 'err'), warn = L.filter(x => x.sev !== 'err');
-  const kinds = {}; L.forEach(x => kinds[x.kind] = (kinds[x.kind] || 0) + 1);
-  const chips = Object.keys(kinds).map(k => `<span class="note" style="margin-right:10px">${MK[k] || k} <b>${kinds[k]}</b></span>`).join('');
-  const row = x => `<tr><td class="r num">${x.r ? `<a href="${PLAN_URL}${x.r}" target="_blank" rel="noopener">${x.r}행</a>` : '–'}</td><td class="r">${x.d ? md(x.d) : '–'}</td><td>${x.k && KN[x.k] ? `<span class="kc" ${cvar(x.k)}><i></i>${KN[x.k]}</span>` : '–'}</td><td>${esc(x.t)}</td><td><b>${MK[x.kind] || x.kind}</b><br><span class="note">${esc(x.msg)}</span></td></tr>`;
-  const tbl = a => `<div class="tw tl"><table><thead><tr><th>시트 행</th><th>일자</th><th>구분</th><th>교육주제</th><th>점검 내용</th></tr></thead><tbody>${a.map(row).join('') || '<tr><td colspan="5">없음</td></tr>'}</tbody></table></div>`;
-  return `<section class="card"><h2>원내교육실시현황 입력 점검 <small>직접 수정 필요 ${err.length}건 · 확인 ${warn.length}건</small></h2>
-    <p class="hint">원내교육실시현황은 수기로 정리하는 시트라서 누락·오류가 있으면 해당 행을 직접 고쳐야 합니다. 시트1·시트2 참석 기록과 대조한 결과이며, 수정 후 새로고침(최대 1시간 이내 자동 반영)하면 사라집니다.</p>
-    <p style="margin:0 0 8px">${chips}</p>
-    <h3 style="font-size:14px;margin:14px 0 6px">수정 필요</h3>${tbl(err)}
-    <h3 style="font-size:14px;margin:14px 0 6px">확인 권장</h3>${tbl(warn)}</section>`;
+  const row = x => { const f = MK_FIX[x.kind] || {col: '', cn: '', act: ''};
+    const pos = x.r ? `${gl(planUrl(f.col + x.r), `${x.r}행`)}<br><span class="note">${f.col}열 · ${f.cn}</span>` : `${gl(planUrl(), '탭 열기')}<br><span class="note">행 추가 필요</span>`;
+    return `<tr><td>${sevTag(x)}</td><td>${pos}</td><td class="r">${x.d ? md(x.d) : '–'}</td><td>${x.k && KN[x.k] ? `<span class="kc" ${cvar(x.k)}><i></i>${KN[x.k]}</span>` : '–'}</td><td>${esc(x.t)}</td><td><b>${MK[x.kind] || x.kind}</b><br><span class="note">${esc(x.msg)}</span></td><td>${esc(f.act)}</td></tr>`; };
+  const tbl = a => `<div class="tw tl"><table><thead><tr><th>구분</th><th>고칠 위치</th><th>일자</th><th>교육</th><th>교육주제</th><th>문제</th><th>해야 할 일</th></tr></thead><tbody>${a.map(row).join('') || '<tr><td colspan="7">✔ 없음</td></tr>'}</tbody></table></div>`;
+  return `<section class="card" id="sec-master"><h2>① 원내교육실시현황 입력 점검 <small>수정 필요 ${err.length}건 · 확인 권장 ${warn.length}건</small></h2>
+    <p style="margin:2px 0 8px">${where(SH_PLAN, TB_PLAN)} ${gl(planUrl(), '시트 열기')}</p>
+    <p class="hint">이 탭은 수기로 정리하는 시트라서 누락·오류가 있으면 <b>해당 행의 해당 열</b>을 직접 고쳐야 합니다. 시트1·시트2 참석 기록과 대조한 결과이며, 수정 후 새로고침하면(최대 1시간 이내 자동 반영) 사라집니다. <b>고칠 위치</b>의 「N행」을 누르면 시트의 그 칸으로 이동합니다.</p>
+    <h3 style="font-size:14px;margin:14px 0 6px">수정 필요 <small class="note">(집계에 영향)</small></h3>${tbl(err)}
+    <h3 style="font-size:14px;margin:14px 0 6px">확인 권장 <small class="note">(집계에는 영향 없음)</small></h3>${tbl(warn)}</section>`;
 }
 function dupSec() {
   const d = D.checks.dups;
-  if (!d) return `<section class="card"><h2>시트 중복 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
-  const t1 = d.s1.map(x => `<tr><td class="r">${md(x.d)}</td><td>${esc(x.t)}</td><td class="r num">${x.n}</td><td class="note">연번 ${x.nos.join(', ')}${x.n > x.nos.length ? ' …' : ''}</td></tr>`).join('') || '<tr><td colspan="4">중복 없음</td></tr>';
-  const t2 = d.s2.map(x => `<tr><td class="r">${md(x.d)}</td><td>${esc(x.t)}</td><td class="r num">${x.cnt}</td><td class="note">연번 ${x.nos.join(', ')}</td></tr>`).join('') || '<tr><td colspan="4">중복 없음</td></tr>';
+  if (!d) return `<section class="card" id="sec-dup"><h2>② 시트 중복 입력 점검</h2><p class="note">서버에서 데이터를 새로 불러오면 표시됩니다(새로고침 버튼).</p></section>`;
+  const t = (a, tab, cnt) => a.map(x => `<tr><td class="r">${md(x.d)}</td><td>${esc(x.t)}</td><td class="r num">${cnt(x)}</td><td>${x.nos.join(', ')}${x.n > x.nos.length ? ' …' : ''}</td></tr>`).join('') || '<tr><td colspan="4">✔ 중복 없음</td></tr>';
   const lg = (D.checks.dupLog || []).map(x => `<tr><td class="r">${esc(x.at)}</td><td>${esc(x.why)}</td><td class="r num">${x.n}행</td></tr>`).join('') || '<tr><td colspan="3">기록 없음</td></tr>';
-  return `<section class="card"><h2>시트 중복 입력 점검 <small>시트1 ${d.s1rows}행 · 시트2 ${d.s2rows}행</small></h2>
-    <p class="hint">같은 내용이 중복으로 입력된 행은 구글 시트에서 <b>주황색</b>으로 표시되고(남길 1행 제외), 삭제하면 색이 자동으로 사라집니다. 이 표는 현재 남아 있는 중복입니다.</p>
+  const head = '<thead><tr><th>일자</th><th>교육명</th><th>중복 행 수</th><th>연번 (A열)</th></tr></thead>';
+  return `<section class="card" id="sec-dup"><h2>② 시트 중복 입력 점검 <small>시트1 ${d.s1rows}행 · 시트2 ${d.s2rows}행</small></h2>
+    <p class="hint">같은 내용이 중복으로 입력된 행은 구글 시트에서 <b>주황색</b>으로 표시됩니다(남길 1행 제외). <b>연번(A열)</b>으로 찾아 주황색 행을 삭제하면 색이 자동으로 사라집니다.</p>
     <h3 style="font-size:14px;margin:14px 0 6px">시트1 — 교육명·일자·사번·성명이 모두 같은 행</h3>
-    <div class="tw tl"><table><thead><tr><th>일자</th><th>교육명</th><th>중복 행</th><th>해당 행</th></tr></thead><tbody>${t1}</tbody></table></div>
+    <p style="margin:0 0 6px">${where(SH_RAW, '시트1', '연번')} ${gl(rawUrl('s1'), '탭 열기')}</p>
+    <div class="tw tl"><table>${head}<tbody>${t(d.s1, 's1', x => x.n)}</tbody></table></div>
     <h3 style="font-size:14px;margin:14px 0 6px">시트2 — 교육코드·교육명·일자·참석인원·교육일시가 모두 같은 행</h3>
-    <div class="tw tl"><table><thead><tr><th>일자</th><th>교육명</th><th>참석인원</th><th>해당 행</th></tr></thead><tbody>${t2}</tbody></table></div>
+    <p style="margin:0 0 6px">${where(SH_RAW, '시트2', '연번')} ${gl(rawUrl('s2'), '탭 열기')}</p>
+    <div class="tw tl"><table>${head}<tbody>${t(d.s2, 's2', x => x.cnt)}</tbody></table></div>
     <h3 style="font-size:14px;margin:14px 0 6px">정리 기록(삭제 로그 요약)</h3>
     <div class="tw tl"><table><thead><tr><th>일시</th><th>내용</th><th>건수</th></tr></thead><tbody>${lg}</tbody></table></div>
-    <p class="note" style="margin:10px 0 0">삭제한 행의 전체 값은 구글 시트의 숨김 시트 '_삭제로그'에 보관되어 있습니다(이름·사번 포함이라 이 페이지에는 표시하지 않습니다).</p></section>`;
+    <p class="note" style="margin:10px 0 0">삭제한 행의 전체 값은 시트의 숨김 탭 '_삭제로그'에 보관되어 있습니다(이름·사번 포함이라 이 페이지에는 표시하지 않습니다).</p></section>`;
 }
 function p4() {
   const c = D.checks;
   const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
   const diff = SESS.filter(s => s.st === 'done' && s.mc != null && s.n1 !== s.mc).sort((a, b) => Math.abs(b.n1 - b.mc) - Math.abs(a.n1 - a.mc));
   const nod = SESS.filter(s => s.st === 'nodata');
+  const L = c.master || [], err = L.filter(x => x.sev === 'err').length, warn = L.length - err;
+  const d1 = (c.dups && c.dups.s1 || []).length, d2 = (c.dups && c.dups.s2 || []).length;
+  const todo = [
+    {n: err, label: '원내교육실시현황 — 입력 수정 필요', w: where(SH_PLAN, TB_PLAN, '이수인원·교육일시'), to: 'sec-master', ext: planUrl()},
+    {n: warn, label: '원내교육실시현황 — 확인 권장', w: where(SH_PLAN, TB_PLAN, '대상·시수·미등록'), to: 'sec-master', ext: planUrl(), soft: 1},
+    {n: d1 + d2, label: `중복 입력 (시트1 ${d1} · 시트2 ${d2})`, w: where(SH_RAW, '시트1·시트2', '연번'), to: 'sec-dup', ext: rawUrl(d1 ? 's1' : 's2')},
+    {n: diff.length, label: '원내현황과 참석 인원이 다른 교육', w: where(SH_PLAN, TB_PLAN, 'I열 이수인원'), to: 'sec-diff', ext: planUrl(), soft: 1},
+    {n: nod.length, label: '시트에 참석 기록이 없는 교육', w: where(SH_RAW, '시트1·시트2', '참석자 입력'), to: 'sec-nod', ext: rawUrl('s1'), soft: 1},
+    {n: c.unmatchedLike.length, label: '분류되지 않은 직무 교육', w: '<span class="where"><b>대시보드</b> › 분류 관리 🔒</span>', to: 'sec-unm', soft: 1}
+  ];
+  const card = t => `<div class="t ${t.n ? (t.soft ? 'warn' : 'crit') : 'ok'}"><div class="n">${t.n ? fmt(t.n) + '<small>건</small>' : '✔'}</div><div class="l">${t.label}</div><div>${t.w}</div><div class="acts">${t.n ? `<button class="go" data-scroll="${t.to}">목록 보기</button>${t.ext ? gl(t.ext, '시트 열기') : ''}` : '<span class="note">이상 없음</span>'}</div></div>`;
   return `
   <div class="callout warn">시트1(참석자 명단)은 <b>${esc(c.s1max || '')}</b>까지만 들어 있고 시트2(교육별 인원)는 더 최근 교육까지 있습니다. 시트1에 없는 교육 <b>${SESS.filter(s => s.unk).length}회</b>는 시트2 인원으로 집계했으며 부서·직위는 구분할 수 없습니다.</div>
-  <div class="stat3">
-    <div class="kpi"><div class="lab">시트2 (교육 단위)</div><div class="val">${c.s2.matched}<small>/ ${c.s2.total}건 분류</small></div><div class="sub">직무·관리자 6개 구분 ${c.s2.target}건 · 분류율 ${pct(c.s2.matched, c.s2.total)}%</div></div>
-    <div class="kpi"><div class="lab">시트1 (참석자 행)</div><div class="val">${fmt(c.s1.matched)}<small>/ ${fmt(c.s1.total)}행 분류</small></div><div class="sub">6개 구분 ${fmt(c.s1.target)}행(중복 포함) → 중복 제거 후 ${fmt(ATT.length)}건</div></div>
-    <div class="kpi"><div class="lab">원내현황과 인원 불일치</div><div class="val">${diff.length}<small>회</small></div><div class="sub">시트1 참석(중복 제거) ≠ 원내교육실시현황 이수인원</div></div>
-  </div>
+  <section class="card"><h2>먼저 확인할 곳</h2><p class="hint">아래 카드는 <b>어느 시트의 어느 탭</b>을 고쳐야 하는지 보여 줍니다. 빨간색은 집계에 영향을 주는 오류, 주황색은 확인하면 좋은 항목입니다. 「시트 열기」는 해당 시트·탭을 새 창으로 엽니다.</p><div class="todo">${todo.map(card).join('')}</div></section>
   ${masterSec()}
   ${dupSec()}
-  <section class="card"><h2>분류 방식 (현재 기준)</h2>
+  <section class="card" id="sec-diff"><h2>③ 원내현황과 참석 인원이 다른 교육</h2><p style="margin:2px 0 8px">${where(SH_PLAN, TB_PLAN, 'I열 이수인원')}</p><p class="hint">같은 교육이 여러 날 보강으로 진행되면 시트 기준 인원이 더 많습니다. 이수인원이 맞는지 확인하고 틀리면 <b>해당 행의 I열</b>을 고치세요. (시트1 = 중복 제거한 참석, 시트2 = 교육별 인원 합계)</p>
+    <div class="tw tl"><table><thead><tr><th>고칠 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>시트1 참석</th><th>시트2 합계</th><th>원내현황(I열)</th></tr></thead><tbody>${diff.map(s => `<tr data-sid="${s.id}"><td>${s.mr ? gl(planUrl('I' + s.mr), s.mr + '행') : '–'}</td><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r num">${s.n1}</td><td class="r num">${s.n2}</td><td class="r num">${s.mc}</td></tr>`).join('') || '<tr><td colspan="7">✔ 차이 없음</td></tr>'}</tbody></table></div></section>
+  <section class="card" id="sec-nod"><h2>④ 원내현황에 있으나 시트에 참석 기록이 없는 교육</h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1·시트2', '참석자 입력')} ${gl(rawUrl('s1'), '시트1 열기')}</p><p class="hint">기준일(${D.asof}) 이전 일정인데 참석 데이터가 없는 교육입니다. 실제로 열렸다면 <b>부서별교육참석명단 시트</b>에 참석자가 들어왔는지 확인하고, 열리지 않았다면 <b>원내교육실시현황</b>에서 행을 정리하세요.</p>
+    <div class="tw tl"><table><thead><tr><th>원내현황 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>이수인원</th></tr></thead><tbody>${nod.map(s => `<tr><td>${s.mr ? gl(planUrl('D' + s.mr), s.mr + '행') : '–'}</td><td class="r">${md(s.d)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r">${s.mc ?? '–'}</td></tr>`).join('') || '<tr><td colspan="5">✔ 없음</td></tr>'}</tbody></table></div></section>
+  <section class="card" id="sec-unm"><h2>⑤ 직무 관련 교육명이지만 분류되지 않은 항목</h2><p style="margin:2px 0 8px"><span class="where"><b>대시보드</b> › 분류 관리 🔒 (간호교육팀)</span></p><p class="hint">원내교육실시현황에 등재되지 않아 6개 구분에서 제외된 교육입니다. 분류 관리에서 구분을 지정하거나 <b>원내교육실시현황</b>에 행을 추가하세요.</p>
+    <div class="tw tl"><table><thead><tr><th>최초일</th><th>교육명</th><th>교육코드</th><th>시트2 건수</th><th>참석 합계</th></tr></thead><tbody>${c.unmatchedLike.map(u => `<tr><td class="r">${md(u.d)}</td><td>${esc(u.t)}</td><td>${esc(u.c)}</td><td class="r num">${u.n}</td><td class="r num">${u.p}</td></tr>`).join('') || '<tr><td colspan="5">✔ 없음</td></tr>'}</tbody></table></div></section>
+  <section class="card"><h2>⑥ 부서 '기타'로 분류된 소속 <small class="note">참고</small></h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1', 'G열 부서')}</p><p class="hint">대시보드 부서 목록(14A~PAM)에 없는 소속입니다. 병동이 아닌 부서(예: 간호국)라면 그대로 두어도 되고, 병동이면 부서 목록 추가가 필요합니다.</p>
+    <div class="mini">${c.etcDept.map(e => `<div class="l" style="grid-template-columns:160px minmax(0,1fr) 38px"><span>${esc(e.d)}</span><span class="b"><i style="width:${e.n / c.etcDept[0].n * 100}%"></i></span><span class="num" style="text-align:right">${e.n}</span></div>`).join('')}</div></section>
+  <section class="card"><h2>분류 현황 · 방식</h2>
+    <div class="stat3" style="margin-bottom:10px">
+      <div class="kpi"><div class="lab">시트2 (교육 단위)</div><div class="val">${c.s2.matched}<small>/ ${c.s2.total}건 분류</small></div><div class="sub">직무·관리자 6개 구분 ${c.s2.target}건 · 분류율 ${pct(c.s2.matched, c.s2.total)}%</div></div>
+      <div class="kpi"><div class="lab">시트1 (참석자 행)</div><div class="val">${fmt(c.s1.matched)}<small>/ ${fmt(c.s1.total)}행 분류</small></div><div class="sub">6개 구분 ${fmt(c.s1.target)}행(중복 포함) → 중복 제거 후 ${fmt(ATT.length)}건</div></div>
+      <div class="kpi"><div class="lab">원내현황과 인원 불일치</div><div class="val">${diff.length}<small>회</small></div><div class="sub">시트1 참석(중복 제거) ≠ 원내교육실시현황 이수인원</div></div>
+    </div>
     <ul class="plain">
       <li>시트1·시트2의 <b>교육명 + 교육일자</b>를 원내교육실시현황의 <b>교육주제 + 교육일시</b>와 대조해 구분·교육과정명·교육과정명-2를 부여했습니다.</li>
       <li>1차: 일자 ±3일 이내이고 교육명 유사도가 높은 행 → 2차: 원내현황에 한 번만 나오는 주제는 ±30일(보강 교육) → 3차: 일부 별칭 규칙(CPR 실습, sub-ICU, 도뇨관).</li>
@@ -727,15 +783,7 @@ function p4() {
       <li>시트1에는 같은 참석자가 중복 행으로 들어 있는 교육이 많아 <b>(교육, 사번)</b> 기준으로 중복을 제거했습니다.</li>
     </ul>
     <p class="note" style="margin:12px 0 0">교육·교육명별 분류 결과 파일은 성명·사번이 포함되어 있어 이 페이지에서 제공하지 않습니다.</p>
-  </section>
-  <section class="card"><h2>원내현황과 참석 인원이 다른 교육</h2><p class="hint">같은 교육이 여러 날 보강으로 진행되면 시트 기준 인원이 더 많습니다. 원내교육실시현황 이수인원 입력 여부를 확인하세요.</p>
-    <div class="tw tl"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>시트1 참석</th><th>시트2 합계</th><th>원내현황</th></tr></thead><tbody>${diff.map(s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r num">${s.n1}</td><td class="r num">${s.n2}</td><td class="r num">${s.mc}</td></tr>`).join('') || '<tr><td colspan="6">차이 없음</td></tr>'}</tbody></table></div></section>
-  <section class="card"><h2>원내현황에 있으나 시트에 참석 기록이 없는 교육</h2><p class="hint">기준일(${D.asof}) 이전 일정인데 참석 데이터가 없는 교육입니다.</p>
-    <div class="tw tl"><table><tbody>${nod.map(s => `<tr><td class="r">${md(s.d)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r">원내현황 ${s.mc ?? '–'}</td></tr>`).join('') || '<tr><td>없음</td></tr>'}</tbody></table></div></section>
-  <section class="card"><h2>직무 관련 교육명이지만 분류되지 않은 항목</h2><p class="hint">원내교육실시현황에 등재되지 않아 6개 구분에서 제외된 교육입니다. 등재 또는 분류 기준 추가 여부를 검토하세요.</p>
-    <div class="tw tl"><table><thead><tr><th>최초일</th><th>교육명</th><th>교육코드</th><th>시트2 건수</th><th>참석 합계</th></tr></thead><tbody>${c.unmatchedLike.map(u => `<tr><td class="r">${md(u.d)}</td><td>${esc(u.t)}</td><td>${esc(u.c)}</td><td class="r num">${u.n}</td><td class="r num">${u.p}</td></tr>`).join('')}</tbody></table></div></section>
-  <section class="card"><h2>부서 '기타'로 분류된 소속</h2><p class="hint">부서 목록(14A~PAM)에 없는 소속입니다. 병동 목록 추가가 필요한지 확인하세요.</p>
-    <div class="mini">${c.etcDept.map(e => `<div class="l" style="grid-template-columns:160px minmax(0,1fr) 38px"><span>${esc(e.d)}</span><span class="b"><i style="width:${e.n / c.etcDept[0].n * 100}%"></i></span><span class="num" style="text-align:right">${e.n}</span></div>`).join('')}</div></section>`;
+  </section>`;
 }
 
 // ---- P5: 분류 관리 (수동 분류) ----
@@ -869,6 +917,7 @@ function bind() {
   $('#xl')?.addEventListener('click', exportTable);
   $('#roster')?.addEventListener('click', exportRoster);
   $('#mgr-xl')?.addEventListener('click', exportMgr);
+  document.querySelectorAll('[data-scroll]').forEach(b => b.addEventListener('click', () => { const el = document.getElementById(b.dataset.scroll); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }));
   document.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => { S.mv = b.dataset.mv; render(); }));
   $('#mq')?.addEventListener('input', e => { S.mq = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#mq'); if (q) { q.focus(); q.setSelectionRange(pos, pos); } });
 }
