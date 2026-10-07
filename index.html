@@ -363,6 +363,7 @@ const GROUPS = [
   ['외래·AK', ['외래(OPD)','AK']],
   ['응급실', ['ER(ERD)']],
   ['전담(PAM)', ['PAM']],
+  ['간호국', ['간호국']],
   ['간호교육팀', ['간호교육팀']],
   ['기타', ['기타']]
 ].map(([n, ds]) => [n, ds.map(d => DEPTS.indexOf(d)).filter(i => i >= 0)]);
@@ -712,6 +713,16 @@ const MK_FIX = {
   nodate:     {col:'F', cn:'교육일시',          act:'교육일시 형식을 확인하세요.'}
 };
 const sevTag = x => x.sev === 'err' ? '<span class="tag crit">수정 필요</span>' : '<span class="tag">확인 권장</span>';
+// ⑥ 시트1 부서 분류 저장(서버의 「부서분류」 탭에 기록 후 재집계)
+async function saveDeptMap() {
+  const items = [...document.querySelectorAll('select[data-deptraw]')].filter(x => x.value).map(x => ({raw: x.dataset.deptraw, dept: x.value}));
+  const msg = $('#dept-msg'), btn = $('#dept-save');
+  if (!items.length) { msg.textContent = '저장할 부서를 먼저 선택하세요.'; return; }
+  if (!S5.token) { msg.textContent = '간호교육팀 관리자 로그인이 필요합니다.'; return; }
+  btn.disabled = true; msg.textContent = `${items.length}건 저장·재집계 중… (수십 초 걸릴 수 있습니다)`;
+  try { await api5('POST', {}, {action: 'deptmap', items}); await loadRemote(); render(); }
+  catch (e) { msg.textContent = '저장 실패: ' + String(e.message || e); btn.disabled = false; }
+}
 // 「수정 완료」 표시: 이 브라우저에만 저장. 같은 데이터(시트 대조 시각) 안에서는 숨기고,
 // 시트 대조가 새로 이뤄진 뒤에도 같은 문제가 남아 있으면 「재확인」으로 다시 보여 줍니다.
 const DONE_KEY = 'edu.p4.done.v1';
@@ -804,6 +815,7 @@ function p4() {
     {n: d1 + d2, label: `중복 입력 — 확인 필요 (시트1 ${d1} · 시트2 ${d2})`, w: where(SH_RAW, '시트1·시트2', '연번'), to: 'sec-dup', ext: rawUrl(d1 ? 's1' : 's2')},
     {n: dfv.open.length, label: '원내현황과 참석 인원이 다른 교육', w: where(SH_PLAN, TB_PLAN, 'I열 이수인원'), to: 'sec-diff', ext: planUrl(), soft: 1},
     {n: ndv.open.length, label: '시트에 참석 기록이 없는 교육', w: where(SH_RAW, '시트1·시트2', '참석자 입력'), to: 'sec-nod', ext: rawUrl('s1'), soft: 1},
+    {n: (c.etcDept || []).length, label: '시트1 부서 분류 확인 필요', w: where(SH_RAW, '시트1', 'G열 부서'), to: 'sec-dept', ext: rawUrl('s1'), soft: 1},
     {n: c.unmatchedLike.length, label: '분류되지 않은 직무 교육', w: '<span class="where"><b>대시보드</b> › 분류 관리 🔒</span>', to: 'sec-unm', soft: 1}
   ];
   const card = t => `<div class="t ${t.n ? (t.soft ? 'warn' : 'crit') : 'ok'}"><div class="n">${t.n ? fmt(t.n) + '<small>건</small>' : '✔'}</div><div class="l">${t.label}</div><div>${t.w}</div><div class="acts">${t.n ? `<button class="go" data-scroll="${t.to}">목록 보기</button>${t.ext ? gl(t.ext, '시트 열기') : ''}` : '<span class="note">이상 없음</span>'}</div></div>`;
@@ -820,8 +832,11 @@ function p4() {
     <div class="tw tl"><table><thead><tr><th class="ck">수정 완료</th><th>원내현황 위치</th><th>일자</th><th>구분</th><th>교육주제</th><th>이수인원</th></tr></thead><tbody>${(S.p4noddone ? nod : ndv.open).map(s => { const stt = ndv.st(s); return `<tr class="${stt === 'done' ? 'dn' : ''}"><td class="ck"><label title="확인·수정했으면 체크하세요."><input type="checkbox" data-noddone="${s.id}" ${stt === 'done' ? 'checked' : ''}> <span>완료</span></label></td><td>${s.mr ? gl(planUrl('D' + s.mr), s.mr + '행') : '–'}${stt === 'again' ? '<br><span class="tag crit" title="수정 완료로 표시했지만 시트 대조 후에도 참석 기록이 없습니다">재확인</span>' : ''}</td><td class="r">${md(s.d)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r">${s.mc ?? '–'}</td></tr>`; }).join('') || `<tr><td colspan="6">${nod.length ? '✔ 모두 확인 완료' : '✔ 없음'}</td></tr>`}</tbody></table></div></section>
   <section class="card" id="sec-unm"><h2>⑤ 직무 관련 교육명이지만 분류되지 않은 항목</h2><p style="margin:2px 0 8px"><span class="where"><b>대시보드</b> › 분류 관리 🔒 (간호교육팀)</span></p><p class="hint">원내교육실시현황에 등재되지 않아 6개 구분에서 제외된 교육입니다. 분류 관리에서 구분을 지정하거나 <b>원내교육실시현황</b>에 행을 추가하세요.</p>
     <div class="tw tl"><table><thead><tr><th>최초일</th><th>교육명</th><th>교육코드</th><th>시트2 건수</th><th>참석 합계</th></tr></thead><tbody>${c.unmatchedLike.map(u => `<tr><td class="r">${md(u.d)}</td><td>${esc(u.t)}</td><td>${esc(u.c)}</td><td class="r num">${u.n}</td><td class="r num">${u.p}</td></tr>`).join('') || '<tr><td colspan="5">✔ 없음</td></tr>'}</tbody></table></div></section>
-  <section class="card"><h2>⑥ 부서 '기타'로 분류된 소속 <small class="note">참고</small></h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1', 'G열 부서')}</p><p class="hint">대시보드 부서 목록(14A~PAM)에 없는 소속입니다. 병동이 아닌 부서(예: 간호국)라면 그대로 두어도 되고, 병동이면 부서 목록 추가가 필요합니다.</p>
-    <div class="mini">${c.etcDept.map(e => `<div class="l" style="grid-template-columns:160px minmax(0,1fr) 38px"><span>${esc(e.d)}</span><span class="b"><i style="width:${e.n / c.etcDept[0].n * 100}%"></i></span><span class="num" style="text-align:right">${e.n}</span></div>`).join('')}</div></section>
+  <section class="card" id="sec-dept"><h2>⑥ 시트1 부서 분류 확인 <small>확인 필요 ${(c.etcDept || []).length}건</small></h2><p style="margin:2px 0 8px">${where(SH_RAW, '시트1', 'G열 부서')} ${gl(rawUrl('s1'), '탭 열기')}</p>
+    <p class="hint">시트1 G열의 부서명 중 대시보드 부서(14A~PAM, 간호국, 간호교육팀)로 자동 분류되지 않아 <b>「기타」</b>로 집계된 항목입니다. <b>대시보드 부서를 선택하고 저장</b>하면 시트의 <b>「부서분류」 탭</b>에 기록되어, 이후 같은 부서명은 자동으로 분류됩니다(재집계에 수십 초). 「기타」로 두어도 되는 부서는 <b>기타</b>를 선택해 저장하면 이 목록에서 빠집니다.</p>
+    <div class="tw tl"><table><thead><tr><th>시트1 부서 (G열)</th><th>건수</th><th>대시보드 부서 선택</th></tr></thead><tbody>${(c.etcDept || []).map(e => `<tr><td>${esc(e.d)}</td><td class="r num">${e.n}</td><td><select data-deptraw="${esc(e.d)}"><option value="">선택…</option>${[...new Set([...DEPTS, '간호국', '간호교육팀', '기타'])].map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></td></tr>`).join('') || '<tr><td colspan="3">✔ 분류 확인이 필요한 부서가 없습니다</td></tr>'}</tbody></table></div>
+    ${(c.etcDept || []).length ? `<p style="margin:8px 0 0"><button class="btn pri" id="dept-save">선택한 부서 저장</button> <span class="note" id="dept-msg"></span></p>` : ''}
+    <details style="margin-top:10px"><summary class="note" style="cursor:pointer">현재 기본 분류 규칙 보기</summary><ul class="plain"><li>간호국 → 간호국 · 간호교육팀·15A병동 → 간호교육팀 · 중앙공급실·재활치료실 → 기타 · 조혈모세포이식센터 → 12B</li><li>내시경실·기관지내시경실·건강관리과·심혈관센터·중앙주사실 → 외래(OPD)</li><li>상처장루전담팀·PA 직무관리 → PAM</li><li>그 밖: 병동(예 7A병동)·ICU·수술실·회복실·외래간호·인공신장실·응급 등은 기존 규칙대로 자동 분류</li></ul></details></section>
   <section class="card"><h2>분류 현황 · 방식</h2>
     <div class="stat3" style="margin-bottom:10px">
       <div class="kpi"><div class="lab">시트2 (교육 단위)</div><div class="val">${c.s2.matched}<small>/ ${c.s2.total}건 분류</small></div><div class="sub">직무·관리자 6개 구분 ${c.s2.target}건 · 분류율 ${pct(c.s2.matched, c.s2.total)}%</div></div>
@@ -975,6 +990,7 @@ function bind() {
     if (ch.checked) done[k] = {at: new Date().toISOString(), built: D.built}; else delete done[k];
     doneSave(done); const y = window.scrollY; render(); window.scrollTo(0, y);
   }));
+  $('#dept-save')?.addEventListener('click', saveDeptMap);
   document.querySelectorAll('input[data-dupdone]').forEach(ch => ch.addEventListener('change', () => {
     const [tab, idx] = ch.dataset.dupdone.split(':'), it = dupView()['s' + tab].all[+idx]; if (!it) return;
     const done = doneLoad(); if (ch.checked) done[it.key] = {at: new Date().toISOString(), built: '*'}; else delete done[it.key];
