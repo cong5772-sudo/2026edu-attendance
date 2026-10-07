@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b6b6a">
+<title>간호교육 참석현황 대시보드</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6b6a'/%3E%3Cpath d='M9 22V10h3l5 7.5V10h3v12h-3l-5-7.5V22z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+body{margin:0}[hidden]{display:none!important}
+@font-face{font-family:"S-Core Dream";font-weight:400;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff") format("woff")}
+@font-face{font-family:"S-Core Dream";font-weight:500;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-5Medium.woff") format("woff")}
+@font-face{font-family:"S-Core Dream";font-weight:600;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-6Bold.woff") format("woff")}
+@font-face{font-family:"S-Core Dream";font-weight:700 900;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-8Heavy.woff") format("woff")}
+:root{
+  --bg:#f3f5f9;--surface:#fff;--sunk:#f4f6fa;--ink:#111827;--ink2:#4b5563;--muted:#6b7280;
+  --line:#e6eaf1;--line2:#d5dbe5;--accent:#2563eb;--accent-ink:#fff;--accent-soft:#e8efff;
+  --navy:#1f3a68;--navy2:#2a4b85;
+  --c-REG:#2563eb;--c-EMG:#f59e0b;--c-TOP:#10b981;--c-DED:#8b5cf6;--c-SEN:#ec4899;--c-PTL:#06b6d4;
+  --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--good-ink:#006300;--crit-ink:#b42d2d;
+  --f-ui:"S-Core Dream","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-num:var(--f-ui);--r:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220;--surface:#121a2b;--sunk:#0f1626;--ink:#e8edf6;--ink2:#b6c0d1;--muted:#8a96aa;
+    --line:#1f2a3f;--line2:#2b3954;--accent:#60a5fa;--accent-ink:#0b1220;--accent-soft:#16264a;
+    --navy:#14254a;--navy2:#1d3566;
+    --c-REG:#60a5fa;--c-EMG:#fbbf24;--c-TOP:#34d399;--c-DED:#a78bfa;--c-SEN:#f472b6;--c-PTL:#22d3ee;
+    --good-ink:#5fd35f;--crit-ink:#ee7f7f;color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+button,input,select{font-family:var(--f-ui)}
+button{font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* topbar */
+.topbar{position:sticky;top:0;z-index:25;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px clamp(16px,2vw,28px);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(17,24,39,.05)}
+.tb-l{display:flex;align-items:center;gap:12px;min-width:0}
+.logo-sq{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;font-weight:700;font-size:22px;line-height:1;box-shadow:0 4px 10px rgba(37,99,235,.3)}
+.tb-title{font-size:19px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.org{display:grid;text-align:right;line-height:1.25;margin-right:6px}
+.org b{font-size:14px;font-weight:700;color:var(--navy)}
+.org small{font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 6px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.pill b{font-weight:500}.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
+/* layout */
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;padding:24px clamp(16px,2vw,28px) 48px}
+.side{position:sticky;top:76px;display:grid;gap:14px;align-content:start;max-height:calc(100vh - 92px);overflow:auto;padding-bottom:4px}
+.navcard{background:linear-gradient(160deg,var(--navy2),var(--navy));border-radius:16px;padding:10px;box-shadow:0 6px 18px rgba(31,58,104,.22)}
+.navlist{display:grid;gap:4px}
+.navbtn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:none;color:rgba(255,255,255,.82);font-weight:600;font-size:14.5px;text-align:left;cursor:pointer}
+.navbtn .ic{width:18px;text-align:center;opacity:.85}
+.navbtn:hover{background:rgba(255,255,255,.08);color:#fff}
+.navbtn[aria-current="page"]{background:rgba(255,255,255,.16);color:#fff}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px}
+.fcard summary{list-style:none;cursor:pointer;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.fcard summary::-webkit-details-marker{display:none}
+.fcard summary span{font-weight:500;font-size:11px;color:var(--accent);text-align:right}
+.fcard[open] summary{margin-bottom:12px}
+.fgrid{display:grid;gap:14px}
+.fs{display:grid;gap:7px}.fl{font-size:12.5px;font-weight:600;color:var(--ink2)}
+.cg{display:flex;flex-wrap:wrap;gap:6px}
+.cg.q4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.fcard .chip{height:32px;padding:0 12px;font-size:13px;font-weight:500}
+.fcard select{height:38px;width:100%;border:1px solid var(--line2);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--ink);font-size:13.5px}
+.fhint{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
+.freset{height:34px;border:1px dashed var(--line2);border-radius:10px;background:none;color:var(--ink2);font-size:12.5px;cursor:pointer}
+.freset:hover{border-color:var(--accent);color:var(--accent)}
+.navfoot{display:grid;gap:5px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;font-size:12px;color:var(--muted)}.navfoot b{color:var(--ink2);font-weight:600}
+.main{display:grid;gap:20px;align-content:start;min-width:0}
+.head h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.head p{margin:4px 0 0;color:var(--ink2);font-size:13px;max-width:70ch}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpi{padding:20px 22px;background:var(--surface);border:1px solid var(--line);border-radius:16px;display:grid;gap:6px;align-content:start;box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.kpi .lab{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;color:var(--ink2)}
+.kpi:nth-child(n+2) .lab::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.kpi:nth-child(4) .lab::before{background:#f59e0b}
+.kpi .val{font-size:36px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.kpi:nth-child(2) .val,.kpi:nth-child(3) .val{color:var(--accent)}
+.kpi:nth-child(4) .val{color:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kpi:nth-child(4) .val{color:#fbbf24}}
+.kpi .val small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:3px;letter-spacing:0}
+.kpi .sub{font-size:12px;color:var(--muted)}
+.kpi:first-child{position:relative;overflow:hidden;background:linear-gradient(140deg,var(--navy2),var(--navy));border-color:transparent;color:#fff}
+.kpi:first-child::before,.kpi:first-child::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.07)}
+.kpi:first-child::before{width:150px;height:150px;right:-30px;top:-50px}
+.kpi:first-child::after{width:110px;height:110px;right:70px;bottom:-60px}
+.kpi:first-child .lab,.kpi:first-child .sub,.kpi:first-child .val small{color:rgba(255,255,255,.82)}
+.kpi:first-child .val{font-size:42px}
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-width:0;box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.card h2{display:flex;align-items:center;gap:8px;margin:0 0 2px;font-size:17px;font-weight:700}
+.card h2::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--accent);flex:none}
+.card .hint{margin:0 0 12px;font-size:12px;color:var(--muted)}
+.sech{display:flex;align-items:center;gap:8px;margin:4px 0 10px;font-size:17px;font-weight:700}
+.sech::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--accent)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 8px;font-size:12px;color:var(--ink2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-size:11px;fill:var(--ink2)}
+.chart .tot{fill:var(--ink);font-weight:700}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.bar{cursor:pointer}.bar:hover{opacity:.8}
+.cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.catc{padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:grid;gap:8px;text-align:left;cursor:pointer;border-top:4px solid var(--cc);box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.catc:hover{background:var(--sunk)}
+.catc .n{font-weight:700;font-size:15px}.catc .grp{font-size:11px;color:var(--muted)}
+.catc .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.catc .big{font-size:26px;font-weight:700;color:var(--cc)}
+.prog{height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}.prog>i{display:block;height:100%;background:var(--cc)}
+.catc small{color:var(--ink2);font-size:12px}
+/* chips / toggle / buttons */
+.seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seg .gl{font-size:12px;font-weight:600;color:var(--muted);margin-right:2px}
+.chip{border:1px solid var(--line2);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--ink)}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.chip .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:var(--cc)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.tg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+.tg button{border:0;background:var(--surface);padding:7px 14px;cursor:pointer;font-size:13px;color:var(--ink2)}
+.tg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn{padding:7px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);cursor:pointer;font-size:12.5px;font-weight:600;text-decoration:none;color:var(--ink2);display:inline-block}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+select{font:inherit}
+/* tables */
+.tw{overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-height:72vh}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{position:sticky;top:0;z-index:2;background:var(--sunk);font-weight:600;font-size:12px;color:var(--ink2);white-space:normal}
+thead th .cdot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:var(--cc)}
+.tw:not(.tl) thead th{min-width:76px;word-break:keep-all}
+.tw:not(.tl) thead th:first-child{min-width:84px}
+tbody th{position:sticky;left:0;z-index:1;background:var(--surface);text-align:left;font-weight:600}
+thead th:first-child{left:0;z-index:3}
+tbody tr:hover td,tbody tr:hover th{background:var(--sunk)}
+tr.sum td,tr.sum th{background:var(--accent-soft);font-weight:700;border-top:2px solid var(--line2);color:var(--ink)}
+td.zero{color:var(--muted)}
+td.heat{font-weight:600}
+td.tot,th.tot{font-weight:700;border-left:1px solid var(--line2)}
+.tl td,.tl th{white-space:normal;text-align:left}
+.tl td.r{text-align:right;white-space:nowrap}
+.tl tbody tr{cursor:pointer}
+.st{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.st.done{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.st.plan{color:var(--muted)}.st.warn{border-color:var(--warn);color:var(--ink2)}
+.kc{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.kc i{width:8px;height:8px;border-radius:2px;background:var(--cc)}
+.note{font-size:12px;color:var(--muted)}
+.callout{padding:12px 14px;border-radius:var(--r);background:var(--accent-soft);border-left:4px solid var(--accent);font-size:13px}
+ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)}ul.plain li{margin:4px 0}
+.stat3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.mini{display:grid;gap:8px}.mini .l{display:grid;grid-template-columns:92px minmax(0,1fr) 38px;gap:8px;align-items:center;font-size:12.5px}
+.mini .b{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}.mini .b i{display:block;height:100%;background:var(--accent)}
+dialog{border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,94vw);max-height:88vh}
+dialog::backdrop{background:rgba(11,18,32,.5)}
+.dh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dh h3{margin:0;font-size:16px;font-weight:700}.dh p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.db{padding:14px 18px 18px;overflow:auto;max-height:68vh;display:grid;gap:14px}
+.x{border:0;background:none;font-size:22px;cursor:pointer;color:var(--ink2);line-height:1}
+#tip{position:fixed;z-index:50;pointer-events:none;max-width:260px;padding:8px 10px;border-radius:6px;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+@media (max-width:1100px){
+  .app{grid-template-columns:230px minmax(0,1fr)}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .cats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:820px){
+  .topbar{flex-wrap:nowrap;gap:8px;padding:8px 14px}
+  .tb-title{font-size:13.5px;letter-spacing:-.03em}
+  .logo-sq{width:28px;height:28px;font-size:18px}
+  .org,.pill b{display:none}.pill{font-size:11px;padding:2px 4px}
+  .app{grid-template-columns:minmax(0,1fr);padding-top:14px;gap:14px}
+  .side{position:static;max-height:none;overflow:visible}
+  .navcard{padding:6px}
+  .navcard .navlist{grid-template-columns:repeat(4,1fr)}
+  .navbtn{flex-direction:column;gap:2px;padding:8px 2px;font-size:11.5px;text-align:center;justify-content:center}
+  .side .navfoot{display:none}
+  .stat3{grid-template-columns:minmax(0,1fr)}
+  .kpi{padding:16px}.kpi .val{font-size:28px}.kpi:first-child .val{font-size:32px}
+  .head h1{font-size:19px}
+  .card h2{font-size:16px}
+}
+@media (max-width:520px){
+  .cats{grid-template-columns:minmax(0,1fr)}
+  th,td{padding:7px 7px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="tb-l"><span class="logo-sq" aria-hidden="true">+</span><b class="tb-title">2026 간호교육 참석현황 대시보드</b></div>
+  <div class="tb-r">
+    <div class="org"><b>인제대학교 해운대백병원 간호국</b><small>간호교육팀</small></div>
+    <span class="pill hide-s"><span class="dot"></span>데이터 기준 <b class="num" id="asof">–</b></span>
+    <span class="pill hide-s">시트 갱신 <b class="num" id="upd">–</b></span>
+  </div>
+</header>
+<div class="app">
+  <aside class="side">
+    <nav class="navcard" aria-label="페이지"><div class="navlist">
+      <button class="navbtn" data-page="p1"><span class="ic">▤</span>종합 현황</button>
+      <button class="navbtn" data-page="p2"><span class="ic">▦</span>직무·관리자교육</button>
+      <button class="navbtn" data-page="p3"><span class="ic">▥</span>부서별 참석현황</button>
+      <button class="navbtn" data-page="p4"><span class="ic">✓</span>데이터 점검</button>
+    </div></nav>
+    <details class="fcard" open>
+      <summary>조회 조건 <span class="note" id="f-sum"></span></summary>
+      <div class="fgrid" id="f-side"></div>
+    </details>
+    <div class="navfoot">
+      <span>데이터 원본 <b>부서별교육참석명단 시트1·시트2</b></span>
+      <span>분류 기준 <b>원내교육실시현황</b></span>
+      <span>인원 기준 <b>교육·사번 중복 제거</b></span>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="head"><h1 id="pt"></h1><p id="ps"></p></header>
+    <div id="view"></div>
+  </main>
+</div>
+<dialog id="dlg"><div class="dh"><div><h3 id="dt"></h3><p id="dp"></p></div><button class="x" id="dx" aria-label="닫기">×</button></div><div class="db" id="dbody"></div></dialog>
+<div id="tip" hidden></div>
+
+<script src="data.js"></script>
+<script>
+'use strict';
+const D = window.EDU_DATA;
+const KEYS = Object.keys(D.keys);
+const KN = D.keys;
+const GROUP = {REG:'직무교육',EMG:'직무교육',TOP:'직무교육',DED:'직무교육',SEN:'관리자교육',PTL:'관리자교육'};
+const DEPTS = D.depts, POS = D.pos;
+const S = {page:'p1', from:'', to:'', k:'all', metric:'rows', plan:true, dept:null};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => (n ?? 0).toLocaleString('ko-KR');
+const md = d => { const [,m,dd] = d.split('-'); return `${+m}/${+dd}`; };
+const cvar = k => `style="--cc:var(--c-${k})"`;
+
+// ---- data prep ----
+const SESS = D.sessions.map(s => {
+  const dts = [].concat(s.dts || []);
+  return {...s, dts, sm: (dts[0] || s.d).slice(0, 7), first: dts[0] || s.d};
+});
+const ATT = D.att.map(r => ({sid:r[0], di:r[1], pi:r[2], p:r[3]}));
+ATT.forEach(a => a.s = SESS[a.sid]);
+const MONTHS = (() => { const out = []; for (let i = 0; i < 12; i++) { const y = 2026 + Math.floor((2 + i) / 12), m = (2 + i) % 12 + 1; out.push(`${y}-${String(m).padStart(2,'0')}`); } return out; })();
+const ml = m => `${+m.slice(5)}월`;
+S.from = MONTHS[0]; S.to = MONTHS[MONTHS.length - 1];
+
+// 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
+Object.assign(S, {pm:'all', q:1, grp:'all', unit:'all'});
+const GROUPS = [
+  ['병동', DEPTS.slice(0, 17)],
+  ['중환자실', ['MFICU(MFI)','NICU','MICU','SICU','EICU']],
+  ['수술·회복', ['수술실(OR)','회복실(RCR)']],
+  ['외래·AK', ['외래(OPD)','AK']],
+  ['응급실', ['ER(ERD)']],
+  ['전담(PAM)', ['PAM']],
+  ['기타', ['기타']]
+].map(([n, ds]) => [n, ds.map(d => DEPTS.indexOf(d)).filter(i => i >= 0)]);
+const QLAB = ['1분기 (3~5월)','2분기 (6~8월)','3분기 (9~11월)','4분기 (12~2월)'];
+function applyPeriod() {
+  if (S.pm === 'all') { S.from = MONTHS[0]; S.to = MONTHS[MONTHS.length - 1]; }
+  else if (S.pm === 'q') { S.from = MONTHS[(S.q - 1) * 3]; S.to = MONTHS[(S.q - 1) * 3 + 2]; }
+}
+const grpIdx = () => S.grp === 'all' ? null : GROUPS.find(g => g[0] === S.grp)[1];
+const deptActive = () => S.grp !== 'all' || S.unit !== 'all';
+const deptSel = i => (S.grp === 'all' || grpIdx().includes(i)) && (S.unit === 'all' || +S.unit === i);
+let CTX = null; // 부서 조건이 있을 때 교육별 참석 인원
+const inR = s => s.sm >= S.from && s.sm <= S.to;
+const view = s => !CTX ? s : {...s, n1: CTX[s.id] || 0, st: (CTX[s.id] || 0) > 0 ? 'done' : (s.st === 'plan' ? 'plan' : 'none')};
+const sessF = () => SESS.filter(inR).map(view);
+const attF = () => ATT.filter(a => inR(a.s) && deptSel(a.di));
+const sum = (arr, f) => arr.reduce((t, x) => t + f(x), 0);
+
+// ---- shell ----
+const PAGES = {
+  p1:['종합 현황','정기직무교육·응급간호술기·주제별 술기·전담간호사 직무교육·선임간호사 교육·파트장 교육 6개 구분의 교육 실시와 참석 현황입니다.'],
+  p2:['직무·관리자교육','직무교육(정기·응급·주제별·전담)과 관리자교육(선임간호사·파트장)을 한 화면에서 구분별로 확인합니다.'],
+  p3:['부서별 직무교육 참석현황','병동 순서(14A → … → PAM → 기타)에 맞춰 6개 구분별 참석 인원을 정리했습니다.'],
+  p4:['데이터 점검','교육 분류 결과와 원내교육실시현황과의 차이를 확인합니다. 자동 입력 데이터가 늘어날 때 먼저 살펴볼 페이지입니다.']
+};
+function filterHTML() {
+  const opt = (v, t, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(t)}</option>`;
+  const mo = (cur) => MONTHS.map(m => opt(m, m.replace('-', '.'), cur)).join('');
+  const period = S.pm === 'zz'
+    ? `<label>분기<select data-f="q">${QLAB.map((l, i) => opt(i + 1, l, S.q)).join('')}</select></label>`
+    : S.pm === 'm'
+    ? `<label>시작월<select data-f="from">${mo(S.from)}</select></label><label>종료월<select data-f="to">${mo(S.to)}</select></label>`
+    : '';
+  const units = (grpIdx() || DEPTS.map((d, i) => i));
+  const chip = (f, v, t, on) => `<button class="chip" data-f="${f}" data-v="${v}" aria-pressed="${on}">${t}</button>`;
+  const hint = S.page === 'p4' ? '<p class="fhint">데이터 점검 페이지는 조회 조건과 무관하게 전체 데이터를 보여줍니다.</p>' : '';
+  return `<div class="fs"><span class="fl">기간 단위</span><div class="cg">${[['all','전체'],['q','분기'],['m','월']].map(([v, t]) => chip('pm', v, t, S.pm === v)).join('')}</div></div>
+    ${S.pm === 'q' ? `<div class="fs"><span class="fl">분기</span><div class="cg q4">${QLAB.map((l, i) => chip('qv', i + 1, l, S.q === i + 1)).join('')}</div></div>` : ''}
+    ${S.pm === 'm' ? `<div class="fs"><span class="fl">시작월</span><select data-f="from">${mo(S.from)}</select></div><div class="fs"><span class="fl">종료월</span><select data-f="to">${mo(S.to)}</select></div>` : ''}
+    <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체', S.grp)}${GROUPS.map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
+    <div class="fs"><span class="fl">세부부서</span><select data-f="unit">${opt('all', '전체', S.unit)}${units.map(i => opt(i, DEPTS[i], S.unit)).join('')}</select></div>
+    <button class="freset" data-f="reset">조건 초기화</button>
+    <p class="fhint">기준일시 ${esc(D.updated)} 갱신 데이터 · 부서를 고르면 세부부서 목록이 해당 부서군으로 좁혀집니다.</p>${hint}`;
+}function filterSummary() {
+  const p = S.pm === 'all' ? '전체 기간' : S.pm === 'q' ? QLAB[S.q - 1].split(' ')[0] : `${S.from.slice(2).replace('-', '.')}~${S.to.slice(2).replace('-', '.')}`;
+  const d = S.unit !== 'all' ? DEPTS[+S.unit] : S.grp !== 'all' ? S.grp : '전 부서';
+  return `${p} · ${d}`;
+}
+function renderFilters() {
+  const h = filterHTML();
+  $('#f-side').innerHTML = h;
+  $('#f-sum').textContent = filterSummary();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]'); if (!b) return;
+  if (b.dataset.f === 'pm') { S.pm = b.dataset.v; applyPeriod(); }
+  else if (b.dataset.f === 'qv') { S.q = +b.dataset.v; applyPeriod(); }
+  else if (b.dataset.f === 'reset') Object.assign(S, {pm:'all', q:1, grp:'all', unit:'all'}), applyPeriod();
+  render();
+});
+document.addEventListener('change', e => {
+  const t = e.target.closest('select[data-f]'); if (!t) return;
+  const f = t.dataset.f, v = t.value;
+  if (f === 'q') { S.q = +v; applyPeriod(); }
+  else if (f === 'from') { S.from = v; if (S.to < v) S.to = v; }
+  else if (f === 'to') { S.to = v; if (S.from > v) S.from = v; }
+  else if (f === 'grp') { S.grp = v; S.unit = 'all'; }
+  else if (f === 'unit') S.unit = v;
+  render();
+});
+
+function go(p) { if (location.hash !== '#' + p) location.hash = p; else render(); }
+window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES[p]) { S.page = p; render(); window.scrollTo(0, 0); } });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page);
+});
+
+function render() {
+  document.querySelectorAll('[data-page]').forEach(b => b.toggleAttribute('aria-current', b.dataset.page === S.page) || (b.dataset.page === S.page ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current')));
+  document.querySelectorAll('[data-page]').forEach(b => { if (b.dataset.page === S.page) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  $('#pt').textContent = PAGES[S.page][0]; $('#ps').textContent = PAGES[S.page][1];
+  document.title = PAGES[S.page][0] + ' · 간호교육 참석현황';
+  CTX = null;
+  if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
+  renderFilters();
+  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4})[S.page]();
+  bind();
+}
+
+// ---- charts ----
+function stackChart(months, byMonth, keys, h = 230) {
+  const W = 640, H = h, L = 34, R = 8, T = 18, B = 26;
+  const max = Math.max(10, ...months.map(m => sum(keys, k => byMonth[m]?.[k] || 0)));
+  const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); return Math.ceil(max / p * 2) / 2 * p; })();
+  const bw = (W - L - R) / months.length;
+  let g = '';
+  for (let i = 0; i <= 4; i++) { const v = nice * i / 4, y = H - B - (H - B - T) * i / 4; g += `<line class="grid" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text x="${L-6}" y="${y+4}" text-anchor="end">${Math.round(v)}</text>`; }
+  months.forEach((m, i) => {
+    let y = H - B; const x = L + i * bw + bw * .18, w = bw * .64; let tot = 0;
+    keys.forEach(k => { const v = byMonth[m]?.[k] || 0; tot += v; if (!v) return; const hh = (H - B - T) * v / nice; y -= hh;
+      g += `<rect class="bar" x="${x}" y="${y}" width="${w}" height="${hh}" fill="var(--c-${k})" data-tip="${esc(ml(m))} · ${esc(KN[k])}: ${fmt(v)}명" rx="2"/>`; });
+    if (tot) g += `<text class="tot" x="${x + w/2}" y="${y - 4}" text-anchor="middle">${fmt(tot)}</text>`;
+    g += `<text x="${x + w/2}" y="${H - 8}" text-anchor="middle">${ml(m)}</text>`;
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 참석 연인원 누적 막대">${g}</svg>`;
+}
+const legend = keys => `<div class="legend">${keys.map(k => `<span><i style="background:var(--c-${k})"></i>${KN[k]}</span>`).join('')}</div>`;
+function monthData(att, keys) {
+  const o = {}; att.forEach(a => { if (!keys.includes(a.s.k)) return; (o[a.s.sm] ??= {}); o[a.s.sm][a.s.k] = (o[a.s.sm][a.s.k] || 0) + 1; }); return o;
+}
+const rangeMonths = () => MONTHS.filter(m => m >= S.from && m <= S.to);
+const uniq = (att) => new Set(att.map(a => a.p)).size;
+const stLabel = s => ({done:'실시', plan:'예정', zero:'신청자 없음', nodata:'집계 필요', none:'참석 없음'})[s] || s;
+
+// ---- P1 ----
+function p1() {
+  const ss = sessF(), at = attF();
+  const done = ss.filter(s => s.st === 'done');
+  const plan = ss.filter(s => s.st === 'plan');
+  const people = uniq(at);
+  const kpi = (l, v, u, sub) => `<div class="kpi"><div class="lab">${l}</div><div class="val">${v}<small>${u}</small></div><div class="sub">${sub}</div></div>`;
+  const cats = KEYS.map(k => {
+    const a = ss.filter(s => s.k === k), d = a.filter(s => s.st === 'done'), n = at.filter(x => x.s.k === k).length;
+    const pct = a.length ? Math.round(d.length / a.length * 100) : 0;
+    return `<button class="catc" data-cat="${k}" ${cvar(k)}><div><div class="grp">${GROUP[k]}</div><div class="n">${KN[k]}</div></div>
+      <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>실시 ${d.length} / 계획 ${a.length}회</small></div>
+      <div class="prog"><i style="width:${pct}%"></i></div>
+      <small>평균 ${d.length ? (n / d.length).toFixed(1) : '–'}명/회 · 실시율 ${pct}%</small></button>`;
+  }).join('');
+  const recent = done.slice().sort((a, b) => b.first.localeCompare(a.first)).slice(0, 6);
+  const next = plan.slice().sort((a, b) => a.d.localeCompare(b.d)).slice(0, 6);
+  const li = s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span><br>${esc(s.t)}</td><td class="r num">${s.st === 'done' ? fmt(s.n1) + '명' : '예정'}</td></tr>`;
+  return `
+  <div class="kpis">
+    ${kpi('실시 교육', done.length, '회', `계획 ${ss.length}회 중 · 실시율 ${ss.length ? Math.round(done.length / ss.length * 100) : 0}%`)}
+    ${kpi('참석 연인원', fmt(at.length), '명', `회당 평균 ${done.length ? (at.length / done.length).toFixed(1) : '–'}명`)}
+    ${kpi('참석 실인원', fmt(people), '명', '기간 내 1회 이상 참석(중복 제거)')}
+    ${kpi('예정 교육', plan.length, '회', plan.length ? `다음 ${md(plan.slice().sort((a,b)=>a.d.localeCompare(b.d))[0].d)}` : '예정 없음')}
+  </div>
+  <div class="grid2">
+    <section class="card"><h2>월별 참석 연인원</h2><p class="hint">구분별 누적 · 막대를 누르면 값이 표시됩니다</p>${legend(KEYS)}${stackChart(rangeMonths(), monthData(at, KEYS), KEYS)}</section>
+    <section class="card"><h2>구분별 참석 비중</h2><p class="hint">기간 내 참석 연인원 기준</p>${shareBars(at)}</section>
+  </div>
+  <section><h2 class="sech">구분별 실시 현황 <span class="note">(카드를 누르면 상세 페이지로 이동)</span></h2><div class="cats">${cats}</div></section>
+  <div class="grid2">
+    <section class="card"><h2>최근 실시 교육</h2><p class="hint">누르면 부서·직위별 참석을 볼 수 있습니다</p><div class="tw" style="max-height:none"><table class="tl"><tbody>${recent.map(li).join('') || '<tr><td>없음</td></tr>'}</tbody></table></div></section>
+    <section class="card"><h2>예정 교육</h2><p class="hint">원내교육실시현황의 계획 일정 기준</p><div class="tw" style="max-height:none"><table class="tl"><tbody>${next.map(li).join('') || '<tr><td>예정 없음</td></tr>'}</tbody></table></div></section>
+  </div>`;
+}
+function shareBars(at) {
+  const tot = at.length || 1;
+  return `<div class="mini">${KEYS.map(k => { const n = at.filter(a => a.s.k === k).length;
+    return `<div class="l"><span class="kc" ${cvar(k)}><i></i>${KN[k]}</span><span class="b"><i style="width:${n / tot * 100}%;background:var(--c-${k})"></i></span><span class="num" style="text-align:right">${Math.round(n / tot * 100)}%</span></div>`; }).join('')}</div>
+    <p class="note" style="margin-top:12px">직무교육 ${fmt(at.filter(a => GROUP[a.s.k] === '직무교육').length)}명 · 관리자교육 ${fmt(at.filter(a => GROUP[a.s.k] === '관리자교육').length)}명</p>`;
+}
+
+// ---- P2 ----
+function p2() {
+  const sel = S.k === 'all' ? KEYS : [S.k];
+  const ss = sessF().filter(s => sel.includes(s.k));
+  const at = attF().filter(a => sel.includes(a.s.k));
+  const done = ss.filter(s => s.st === 'done');
+  const list = ss.filter(s => (S.plan || s.st !== 'plan') && !(CTX && s.st === 'none')).sort((a, b) => a.first.localeCompare(b.first));
+  const chips = (keys, label) => `<span class="gl">${label}</span>` + keys.map(k => `<button class="chip" data-k="${k}" aria-pressed="${S.k === k}" ${cvar(k)}><span class="sw"></span>${KN[k]}</button>`).join('');
+  const posRows = POS.map((p, i) => ({p, n: at.filter(a => a.pi === i).length})).filter(x => x.n);
+  const pmax = Math.max(1, ...posRows.map(x => x.n));
+  const row = s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}${s.dts.length > 1 ? `<br><span class="note">외 ${s.dts.length - 1}일</span>` : ''}</td>
+    <td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td>
+    <td class="r num">${s.min ? s.min + '분' : '–'}</td><td class="r num"><b>${s.st === 'done' ? fmt(s.n1) : '–'}</b></td>
+    <td class="r num">${s.mc == null ? '–' : fmt(s.mc)}</td><td class="r"><span class="st ${s.st === 'done' ? 'done' : s.st === 'plan' ? 'plan' : 'warn'}">${stLabel(s.st)}</span></td></tr>`;
+  return `
+  <div class="card"><div class="seg">
+    <button class="chip" data-k="all" aria-pressed="${S.k === 'all'}">전체</button>
+    ${chips(['REG','EMG','TOP','DED'], '직무교육')}<span style="width:8px"></span>${chips(['SEN','PTL'], '관리자교육')}
+  </div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="lab">실시 / 계획</div><div class="val">${done.length}<small>/ ${ss.length}회</small></div><div class="sub">실시율 ${ss.length ? Math.round(done.length / ss.length * 100) : 0}%</div></div>
+    <div class="kpi"><div class="lab">참석 연인원</div><div class="val">${fmt(at.length)}<small>명</small></div><div class="sub">회당 평균 ${done.length ? (at.length / done.length).toFixed(1) : '–'}명</div></div>
+    <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(uniq(at))}<small>명</small></div><div class="sub">중복 제거</div></div>
+    <div class="kpi"><div class="lab">예정</div><div class="val">${ss.filter(s => s.st === 'plan').length}<small>회</small></div><div class="sub">${ss.filter(s => s.st !== 'done' && s.st !== 'plan' && s.st !== 'none').length ? '집계 필요 ' + ss.filter(s => s.st !== 'done' && s.st !== 'plan' && s.st !== 'none').length + '회' : '미집계 없음'}</div></div>
+  </div>
+  <div class="grid2">
+    <section class="card"><h2>월별 참석 연인원${S.k === 'all' ? '' : ' · ' + KN[S.k]}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S.k === 'all' ? legend(KEYS) : ''}${stackChart(rangeMonths(), monthData(at, sel), sel, 210)}</section>
+    <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준</p>
+      <div class="mini">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">데이터 없음</span>'}</div></section>
+  </div>
+  <section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">행을 누르면 부서·직위별 참석을 볼 수 있습니다 · 참석은 시트1 기준(교육·사번 중복 제거), 원내현황은 원내교육실시현황의 이수인원</p></div>
+    <label class="note"><input type="checkbox" id="plan-tg" ${S.plan ? 'checked' : ''}> 예정 교육 포함</label></div>
+    <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>시수</th><th>참석</th><th>원내현황</th><th>상태</th></tr></thead><tbody>${list.map(row).join('') || '<tr><td colspan="7">해당 교육이 없습니다.</td></tr>'}</tbody></table></div></section>`;
+}
+
+// ---- P3 ----
+function matrix() {
+  const at = attF();
+  const m = DEPTS.map(() => KEYS.map(() => S.metric === 'rows' ? 0 : new Set()));
+  const tot = DEPTS.map(() => S.metric === 'rows' ? 0 : new Set());
+  at.forEach(a => {
+    const ki = KEYS.indexOf(a.s.k);
+    if (S.metric === 'rows') { m[a.di][ki]++; tot[a.di]++; } else { m[a.di][ki].add(a.p); tot[a.di].add(a.p); }
+  });
+  const val = x => S.metric === 'rows' ? x : x.size;
+  const cells = m.map(r => r.map(val)), totals = tot.map(val);
+  const colSum = KEYS.map((k, ki) => S.metric === 'rows' ? sum(cells, r => r[ki]) : new Set(at.filter(a => a.s.k === k).map(a => a.p)).size);
+  const allTot = S.metric === 'rows' ? at.length : uniq(at);
+  return {cells, totals, colSum, allTot};
+}
+function p3() {
+  const {cells, totals, colSum, allTot} = matrix();
+  const colMax = KEYS.map((k, ki) => Math.max(1, ...cells.map(r => r[ki])));
+  const totMax = Math.max(1, ...totals);
+  const heat = (v, mx, k) => v ? `style="background:color-mix(in srgb,var(${k ? '--c-' + k : '--accent'}) ${Math.round(8 + v / mx * 34)}%,transparent)"` : '';
+  const ss = sessF();
+  const head = KEYS.map(k => { const n = ss.filter(s => s.k === k && s.st === 'done').length; return `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}<br><span class="note num">${n}회 실시</span></th>`; }).join('');
+  const body = DEPTS.map((d, i) => !deptSel(i) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cells[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
+  const foot = `<tr class="sum"><th>합계</th>${colSum.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
+  const dp = S.dept != null ? deptPanel(S.dept) : '';
+  return `
+  <div class="card tools">
+    <div class="tg" role="group" aria-label="집계 기준"><button data-metric="rows" aria-pressed="${S.metric === 'rows'}">참석 연인원</button><button data-metric="persons" aria-pressed="${S.metric === 'persons'}">참석 실인원</button></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="note">${S.metric === 'rows' ? '교육별 참석 건수의 합 (같은 사람이 여러 교육에 참석하면 각각 계산)' : '구분 안에서 중복을 제거한 인원 (합계도 전체 기준 중복 제거)'}</span><button class="btn" id="csv">CSV 저장</button></div>
+  </div>
+  <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
+  <p class="note">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 목록에 없는 부서→기타).</p>
+  ${dp}`;
+}
+function deptPanel(i) {
+  const at = attF().filter(a => a.di === i);
+  const byK = KEYS.map(k => ({k, n: at.filter(a => a.s.k === k).length, u: uniq(at.filter(a => a.s.k === k))}));
+  const posRows = POS.map((p, pi) => ({p, n: at.filter(a => a.pi === pi).length})).filter(x => x.n);
+  const mx = Math.max(1, ...byK.map(x => x.n)), pm = Math.max(1, ...posRows.map(x => x.n));
+  return `<section class="card" id="dp"><div class="tools"><h2>${esc(DEPTS[i])} 상세</h2><button class="btn" id="dclose">닫기</button></div>
+    <p class="hint">연인원 ${fmt(at.length)}명 · 실인원 ${fmt(uniq(at))}명</p>
+    <div class="grid2"><div class="mini">${byK.map(x => `<div class="l"><span class="kc" ${cvar(x.k)}><i></i>${KN[x.k]}</span><span class="b"><i style="width:${x.n / mx * 100}%;background:var(--c-${x.k})"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('')}</div>
+    <div class="mini">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pm * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">참석 데이터 없음</span>'}</div></div></section>`;
+}
+
+// ---- P4 ----
+function p4() {
+  const c = D.checks;
+  const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
+  const diff = SESS.filter(s => s.st === 'done' && s.mc != null && s.n1 !== s.mc).sort((a, b) => Math.abs(b.n1 - b.mc) - Math.abs(a.n1 - a.mc));
+  const nod = SESS.filter(s => s.st === 'nodata');
+  return `
+  <div class="stat3">
+    <div class="kpi"><div class="lab">시트2 (교육 단위)</div><div class="val">${c.s2.matched}<small>/ ${c.s2.total}건 분류</small></div><div class="sub">직무·관리자 6개 구분 ${c.s2.target}건 · 분류율 ${pct(c.s2.matched, c.s2.total)}%</div></div>
+    <div class="kpi"><div class="lab">시트1 (참석자 행)</div><div class="val">${fmt(c.s1.matched)}<small>/ ${fmt(c.s1.total)}행 분류</small></div><div class="sub">6개 구분 ${fmt(c.s1.target)}행(중복 포함) → 중복 제거 후 ${fmt(ATT.length)}건</div></div>
+    <div class="kpi"><div class="lab">원내현황과 인원 불일치</div><div class="val">${diff.length}<small>회</small></div><div class="sub">시트1 참석(중복 제거) ≠ 원내교육실시현황 이수인원</div></div>
+  </div>
+  <section class="card"><h2>분류 방식 (현재 기준)</h2>
+    <ul class="plain">
+      <li>시트1·시트2의 <b>교육명 + 교육일자</b>를 원내교육실시현황의 <b>교육주제 + 교육일시</b>와 대조해 구분·교육과정명·교육과정명-2를 부여했습니다.</li>
+      <li>1차: 일자 ±3일 이내이고 교육명 유사도가 높은 행 → 2차: 원내현황에 한 번만 나오는 주제는 ±30일(보강 교육) → 3차: 일부 별칭 규칙(CPR 실습, sub-ICU, 도뇨관).</li>
+      <li>원내교육실시현황에 없는 교육(부서별 특성화, 신규 교직원 교육 등)은 <b>미분류</b>로 두었고, 이 대시보드의 6개 구분에서 제외됩니다.</li>
+      <li>시트1에는 같은 참석자가 중복 행으로 들어 있는 교육이 많아 <b>(교육, 사번)</b> 기준으로 중복을 제거했습니다.</li>
+    </ul>
+    <p class="note" style="margin:12px 0 0">교육·교육명별 분류 결과 파일은 성명·사번이 포함되어 있어 이 페이지에서 제공하지 않습니다.</p>
+  </section>
+  <section class="card"><h2>원내현황과 참석 인원이 다른 교육</h2><p class="hint">같은 교육이 여러 날 보강으로 진행되면 시트 기준 인원이 더 많습니다. 원내교육실시현황 이수인원 입력 여부를 확인하세요.</p>
+    <div class="tw tl"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>시트1 참석</th><th>시트2 합계</th><th>원내현황</th></tr></thead><tbody>${diff.map(s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r num">${s.n1}</td><td class="r num">${s.n2}</td><td class="r num">${s.mc}</td></tr>`).join('') || '<tr><td colspan="6">차이 없음</td></tr>'}</tbody></table></div></section>
+  <section class="card"><h2>원내현황에 있으나 시트에 참석 기록이 없는 교육</h2><p class="hint">기준일(${D.asof}) 이전 일정인데 참석 데이터가 없는 교육입니다.</p>
+    <div class="tw tl"><table><tbody>${nod.map(s => `<tr><td class="r">${md(s.d)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span></td><td>${esc(s.t)}</td><td class="r">원내현황 ${s.mc ?? '–'}</td></tr>`).join('') || '<tr><td>없음</td></tr>'}</tbody></table></div></section>
+  <section class="card"><h2>직무 관련 교육명이지만 분류되지 않은 항목</h2><p class="hint">원내교육실시현황에 등재되지 않아 6개 구분에서 제외된 교육입니다. 등재 또는 분류 기준 추가 여부를 검토하세요.</p>
+    <div class="tw tl"><table><thead><tr><th>최초일</th><th>교육명</th><th>교육코드</th><th>시트2 건수</th><th>참석 합계</th></tr></thead><tbody>${c.unmatchedLike.map(u => `<tr><td class="r">${md(u.d)}</td><td>${esc(u.t)}</td><td>${esc(u.c)}</td><td class="r num">${u.n}</td><td class="r num">${u.p}</td></tr>`).join('')}</tbody></table></div></section>
+  <section class="card"><h2>부서 '기타'로 분류된 소속</h2><p class="hint">부서 목록(14A~PAM)에 없는 소속입니다. 병동 목록 추가가 필요한지 확인하세요.</p>
+    <div class="mini">${c.etcDept.map(e => `<div class="l" style="grid-template-columns:160px minmax(0,1fr) 38px"><span>${esc(e.d)}</span><span class="b"><i style="width:${e.n / c.etcDept[0].n * 100}%"></i></span><span class="num" style="text-align:right">${e.n}</span></div>`).join('')}</div></section>`;
+}
+
+// ---- interactions ----
+function openSession(id) {
+  const s = SESS[id], at = ATT.filter(a => a.sid === id);
+  const dm = Array(DEPTS.length).fill(0), pm = Array(POS.length).fill(0);
+  at.forEach(a => { dm[a.di]++; pm[a.pi]++; });
+  const mx = Math.max(1, ...dm), px = Math.max(1, ...pm);
+  $('#dt').textContent = s.t;
+  $('#dp').innerHTML = `${KN[s.k]} · ${s.dts.length ? s.dts.map(md).join(', ') : md(s.d) + ' (예정)'}${s.min ? ' · ' + s.min + '분' : ''}${s.tg ? ' · 대상: ' + esc(s.tg) : ''}`;
+  $('#dbody').innerHTML = s.st !== 'done' ? `<p class="note">${stLabel(s.st)} 상태로 참석 데이터가 없습니다.</p>` : `
+    <div class="kpis" style="grid-template-columns:repeat(3,1fr)"><div class="kpi"><div class="lab">참석(중복 제거)</div><div class="val">${fmt(s.n1)}<small>명</small></div></div><div class="kpi"><div class="lab">시트2 합계</div><div class="val">${fmt(s.n2)}<small>명</small></div></div><div class="kpi"><div class="lab">원내현황</div><div class="val">${s.mc ?? '–'}<small>${s.mc == null ? '' : '명'}</small></div></div></div>
+    <div><b>부서별</b><div class="mini" style="margin-top:8px">${DEPTS.map((d, i) => dm[i] ? `<div class="l"><span>${esc(d)}</span><span class="b"><i style="width:${dm[i] / mx * 100}%"></i></span><span class="num" style="text-align:right">${dm[i]}</span></div>` : '').join('')}</div></div>
+    <div><b>직위별</b><div class="mini" style="margin-top:8px">${POS.map((p, i) => pm[i] ? `<div class="l"><span>${esc(p)}</span><span class="b"><i style="width:${pm[i] / px * 100}%"></i></span><span class="num" style="text-align:right">${pm[i]}</span></div>` : '').join('')}</div></div>`;
+  $('#dlg').showModal();
+}
+function bind() {
+  document.querySelectorAll('[data-sid]').forEach(r => r.addEventListener('click', () => openSession(+r.dataset.sid)));
+  document.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.cat; go('p2'); }));
+  document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.k; render(); }));
+  document.querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { S.metric = b.dataset.metric; render(); }));
+  document.querySelectorAll('[data-dept]').forEach(r => r.addEventListener('click', () => { S.dept = +r.dataset.dept; render(); $('#dp')?.scrollIntoView({behavior:'smooth', block:'nearest'}); }));
+  $('#plan-tg')?.addEventListener('change', e => { S.plan = e.target.checked; render(); });
+  $('#dclose')?.addEventListener('click', () => { S.dept = null; render(); });
+  $('#csv')?.addEventListener('click', csv);
+}
+function csv() {
+  const {cells, totals, colSum, allTot} = matrix();
+  const rows = [['부서', ...KEYS.map(k => KN[k]), '합계'], ...DEPTS.map((d, i) => [d, ...cells[i], totals[i]]), ['합계', ...colSum, allTot]];
+  const text = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/csv;charset=utf-8'}));
+  a.download = `부서별_직무교육_참석현황_${S.metric === 'rows' ? '연인원' : '실인원'}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+$('#dx').addEventListener('click', () => $('#dlg').close());
+$('#dlg').addEventListener('click', e => { if (e.target === $('#dlg')) $('#dlg').close(); });
+// tooltip (hover & tap)
+const tip = $('#tip');
+document.addEventListener('pointerover', e => { const t = e.target.closest('[data-tip]'); if (!t) { tip.hidden = true; return; } tip.textContent = t.dataset.tip; tip.hidden = false; });
+document.addEventListener('pointermove', e => { if (tip.hidden) return; tip.style.left = Math.min(innerWidth - 270, e.clientX + 12) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; });
+document.addEventListener('click', e => { const t = e.target.closest('[data-tip]'); if (t) { tip.textContent = t.dataset.tip; tip.hidden = false; tip.style.left = Math.min(innerWidth - 270, e.clientX + 8) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; } else tip.hidden = true; });
+
+$('#asof').textContent = D.asof; $('#upd').textContent = D.updated;
+applyPeriod();
+if (innerWidth <= 820) document.querySelector('.fcard').removeAttribute('open');
+const h = location.hash.slice(1); if (PAGES[h]) S.page = h;
+render();
+</script>
+</body>
+</html>
