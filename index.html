@@ -203,7 +203,7 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   .app{grid-template-columns:minmax(0,1fr);padding-top:14px;gap:14px}
   .side{position:static;max-height:none;overflow:visible}
   .navcard{padding:6px}
-  .navcard .navlist{grid-template-columns:repeat(5,1fr)}
+  .navcard .navlist{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
   .navbtn{flex-direction:column;gap:2px;padding:8px 2px;font-size:11.5px;text-align:center;justify-content:center}
   .side .navfoot{display:none}
   .stat3{grid-template-columns:minmax(0,1fr)}
@@ -217,6 +217,19 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   th,td{padding:7px 7px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#login{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:24px;background:var(--bg);overflow:auto}
+body.locked{overflow:hidden}
+.lg{width:min(920px,100%);display:grid;gap:22px}
+.lg-head{text-align:center}.lg-head .logo-sq{margin:0 auto}.lg-head h1{margin:12px 0 4px;font-size:24px;font-weight:700;letter-spacing:-.02em}.lg-head p{margin:0;color:var(--ink2);font-size:13px}
+.lg-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lg-box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:grid;gap:12px;align-content:start;box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.lg-box h2{margin:0;font-size:16px;font-weight:700}.lg-box .d{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6}
+.lg-box input{padding:10px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;font-size:14px;background:var(--surface);color:var(--ink)}
+.lg-box form{display:grid;gap:10px}.lg-err{margin:0;min-height:1.2em;font-size:12.5px;color:var(--crit-ink)}
+.lg-foot{text-align:center;font-size:11.5px;color:var(--muted);margin:0}
+#role{font-weight:600;color:var(--navy)}
+.navbtn.lk{opacity:.5;cursor:not-allowed}.navbtn .lkic{margin-left:auto;font-size:12px}
+@media (max-width:760px){.lg-grid{grid-template-columns:1fr}.lg-head h1{font-size:19px}}
 </style>
 </head>
 <body>
@@ -226,6 +239,7 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
     <div class="org"><b>인제대학교 해운대백병원 간호국</b><small>간호교육팀</small></div>
     <span class="pill hide-s"><span class="dot"></span>데이터 기준 <b class="num" id="asof">–</b></span>
     <span class="pill hide-s">시트 갱신 <b class="num" id="upd">–</b></span>
+    <span class="pill" id="role" hidden></span><button class="btn" id="logout" hidden>로그아웃</button>
     <button class="refresh" id="refresh" aria-label="최신 데이터로 새로고침" title="최신 데이터로 새로고침">↻</button>
   </div>
 </header>
@@ -255,11 +269,21 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   </main>
 </div>
 <dialog id="dlg"><div class="dh"><div><h3 id="dt"></h3><p id="dp"></p></div><button class="x" id="dx" aria-label="닫기">×</button></div><div class="db" id="dbody"></div></dialog>
-<dialog id="adlg"><div class="dh"><div><h3>관리자 모드</h3><p>참석자 명단(이름·사번 포함)은 비밀번호를 입력한 관리자만 받을 수 있습니다.</p></div><button class="x" id="adx" aria-label="닫기">×</button></div>
-  <form class="db" id="adf" method="dialog"><input type="password" id="adpw" placeholder="비밀번호" autocomplete="current-password" style="padding:10px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
-  <p class="note" id="aderr" style="color:var(--crit-ink);margin:0"></p><button class="btn" id="adok" type="submit" style="justify-self:start">확인</button></form>
-  <div class="db" id="gsec" hidden style="border-top:1px solid var(--line)"><div><b>부서 관리자(파트장) 로그인</b><p class="note" style="margin:4px 0 0">교육팀에 등록된 구글 계정으로 로그인하면 <b>본인 부서</b>의 참석자 명단을 확인하고 엑셀로 받을 수 있습니다.</p></div>
-  <div id="gbtn"></div><p class="note" id="gerr" style="color:var(--crit-ink);margin:0"></p></div></dialog>
+<div id="login" hidden>
+  <div class="lg">
+    <div class="lg-head"><span class="logo-sq" aria-hidden="true">+</span><h1>2026 간호교육 참석현황 대시보드</h1><p>인제대학교 해운대백병원 간호국 · 간호교육팀 — 접근 구분을 선택하고 로그인하세요</p></div>
+    <div class="lg-grid">
+      <section class="lg-box"><h2>관리자 (간호교육팀)</h2>
+        <p class="d">종합 현황, 직무·관리자교육, 부서별 참석현황, 데이터 점검, 분류 관리 등 <b>모든 내용</b>을 확인합니다.</p>
+        <form id="lgf"><input type="password" id="lgpw" placeholder="비밀번호" autocomplete="current-password"><button class="btn pri" id="lgok" type="submit">로그인</button></form>
+        <p class="lg-err" id="lgerr"></p></section>
+      <section class="lg-box"><h2>관리자 (간호국 · 간호단위 파트장)</h2>
+        <p class="d">교육팀에 등록된 <b>구글 계정</b>으로 로그인합니다. <b>간호단위 파트장</b>은 부서별 참석현황에서 본인 간호단위의 인원과 참석자 명단을 확인하고 엑셀로 받을 수 있습니다. <b>간호국</b>은 전체 현황을 볼 수 있으며 데이터 점검·분류 관리는 잠겨 있습니다.</p>
+        <div id="lgbtn"></div><p class="lg-err" id="lgerr2"></p></section>
+    </div>
+    <p class="lg-foot">처음 로그인할 때는 서버 준비로 30초 정도 걸릴 수 있습니다. 이름·사번이 포함된 정보는 부서 내에서만 사용해 주세요.</p>
+  </div>
+</div>
 <div id="tip" hidden></div>
 
 <script src="config.js"></script>
@@ -353,14 +377,14 @@ function filterHTML() {
   const has = new Set([...SESS.map(s => s.sm), ...ATTX.map(a => a.ym)]);
   const monthHas = m => YEARS.some(y => (!S.ys.size || S.ys.has(y)) && has.has(`${y}-${String(m).padStart(2, '0')}`));
   const qOn = q => [1, 2, 3].every(i => S.ms.has((q - 1) * 3 + i));
-  const units = grpIdx() || [];
+  const units = (grpIdx() || []).filter(deptAllowed);
   const hint = S.page === 'p4' ? '<p class="fhint">데이터 점검 페이지는 조회 조건과 무관하게 전체 데이터를 보여줍니다.</p>' : '';
   return `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('y', 'all', '전체', !S.ys.size)}${YEARS.map(y => chip('y', y, y + '년', S.ys.has(y))).join('')}</div></div>
     <div class="fs"><span class="fl">분기</span><div class="cg">${chip('q', 'all', '전체', !S.ms.size)}${[1, 2, 3, 4].map(q => chip('q', q, q + '분기', qOn(q))).join('')}</div></div>
     <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({length: 12}, (_, i) => i + 1).map(m => chip('m', m, m + '월', S.ms.has(m), !monthHas(m))).join('')}</div></div>
     <div class="fs ms-wrap"><span class="fl">교육 종류</span>${combo('cg', catGroupSummary(), [['all', '전체', !S.cats.size], ...GK.map(([n, ks]) => [n, n, ks.every(k => S.cats.has(k))])])}</div>
     <div class="fs ms-wrap"><span class="fl">교육 구분</span>${combo('ck', catKeySummary(), [['all', '전체', !S.cats.size], ...ALLK.map(k => [k, ALLN[k], S.cats.has(k)])])}</div>
-    <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체 부서', S.grp)}${GROUPS.map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
+    <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체 부서', S.grp)}${GROUPS.filter(g => g[1].some(deptAllowed)).map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
     <div class="fs"><span class="fl">세부부서</span>${S.grp === 'all' ? '<div class="seldis">부서를 먼저 선택</div>' : `<div class="cg">${chip('u', 'all', '전체', !S.units.size)}${units.map(i => chip('u', i, esc(DEPTS[i]), S.units.has(i))).join('')}</div>`}</div>
     <button class="freset" data-f="reset">조건 초기화</button>
     <p class="fhint">분기·월·세부부서는 여러 개를 함께 선택할 수 있습니다. 기준일시 ${esc(D.updated)} 갱신 데이터</p>${hint}`;
@@ -409,13 +433,14 @@ document.addEventListener('change', e => {
   if (t.dataset.f === 'grp') { S.grp = t.value; S.units.clear(); }
   render();
 });
-function go(p) { if (location.hash !== '#' + p) location.hash = p; else render(); }
-window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES[p]) { S.page = p; render(); window.scrollTo(0, 0); } });
+function go(p) { if (!(ROLE_PAGES[role()] || []).includes(p)) return; if (location.hash !== '#' + p) location.hash = p; else render(); }
+window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES[p] && (ROLE_PAGES[role()] || []).includes(p)) { S.page = p; render(); window.scrollTo(0, 0); } });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page);
 });
 
 function render() {
+  if (!role()) { $('#view').innerHTML = ''; return; }
   document.querySelectorAll('[data-page]').forEach(b => b.toggleAttribute('aria-current', b.dataset.page === S.page) || (b.dataset.page === S.page ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current')));
   document.querySelectorAll('[data-page]').forEach(b => { if (b.dataset.page === S.page) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   $('#pt').textContent = PAGES[S.page][0]; $('#ps').textContent = PAGES[S.page][1];
@@ -578,7 +603,7 @@ function p2() {
 
 // ---- P3 ----
 function matrix() {
-  const at = attF();
+  const at = attF().filter(a => deptAllowed(a.di));
   const mk = () => KEYS.map(() => S.metric === 'rows' ? 0 : new Set());
   const m = DEPTS.map(mk), unkRow = mk();
   const tot = DEPTS.map(() => S.metric === 'rows' ? 0 : new Set());
@@ -603,14 +628,14 @@ function p3() {
   const heat = () => ''; // 본문 색 바탕 없음
   const ss = sessF();
   const head = KI.map(i => { const k = KEYS[i]; const n = ss.filter(s => s.k === k && s.st === 'done').length; return `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}<br><span class="note num">${n}회 실시</span></th>`; }).join('');
-  const body = DEPTS.map((d, i) => !deptSel(i) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cellsV[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
+  const body = DEPTS.map((d, i) => !(deptSel(i) && deptAllowed(i)) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cellsV[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
   const unkHtml = unkTot ? `<tr><th title="시트1 참석자 명단에 아직 없는 교육(시트2 인원)">부서 미확인*</th>${unkV.map(v => `<td class="num ${v ? '' : 'zero'}">${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot">${fmt(unkTot)}</td></tr>` : '';
   const unkNote = unkTot ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : '';
   const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSumV.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
   const dp = S.dept != null ? deptPanel(S.dept) : '';
   return `
   <div class="card tools" style="justify-content:flex-end">
-    <div style="display:flex;gap:8px;align-items:center"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button>${S.admin ? '<span class="st done">관리자 모드 사용 중</span><button class="btn" id="roster">참석자 명단 엑셀</button><button class="btn" id="adm-out">관리자 해제</button>' : S.mgr ? mgrTag() : '<button class="btn pri" id="adm" title="참석자 명단(이름·사번) 다운로드, 분류 관리 사용">🔒 관리자 모드</button>'}</div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
   </div>
   <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${unkNote}
@@ -714,12 +739,19 @@ const tripleOf = code => { const i = S5.data && S5.data.codes && S5.data.codes[c
 const selOf = x => S5.sel[x.title] || (x.suggest ? tripleOf(x.suggest) : ['', '', '']);
 const selDone = s => s[0] === EXC || (s[0] && s[1] && c2List(s[0], s[1]).includes(s[2] || ''));
 const pathText = s => s[0] === EXC ? '제외 (대시보드에 반영 안 함)' : [s[0], s[1], s[2]].filter(Boolean).join(' › ');
+async function fetchJson(url, opts, retry) {
+  for (let i = 0; ; i++) {
+    try {
+      const r = await fetch(url, opts), t = await r.text();
+      try { return JSON.parse(t); } catch (_) { throw new Error('서버가 일시적으로 응답하지 않았습니다. 잠시 후 다시 시도해 주세요.'); }
+    } catch (e) { if (!retry || i >= 1) throw e; await new Promise(res => setTimeout(res, 2000)); }
+  }
+}
 async function api5(method, params, body) {
   const api = window.EDU_API;
   if (!api) throw new Error('백엔드 주소(config.js의 EDU_API)가 아직 설정되지 않았습니다.');
   const url = api + (api.includes('?') ? '&' : '?') + new URLSearchParams(params || {}).toString();
-  const r = await fetch(method === 'GET' ? url : api, method === 'GET' ? {cache:'no-store'} : {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({token:S5.token, ...body})});
-  const j = await r.json(); if (j.ok === false) throw new Error(j.error || '요청 실패'); return j;
+  const j = await fetchJson(method === 'GET' ? url : api, method === 'GET' ? {cache:'no-store'} : {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({token:S5.token, ...body})}, method === 'GET'); if (j.ok === false) throw new Error(j.error || '요청 실패'); return j;
 }
 async function load5() {
   S5.loading = true; S5.msg = ''; render();
@@ -818,12 +850,9 @@ function bind() {
   $('#dclose')?.addEventListener('click', () => { S.dept = null; render(); });
   $('#xl')?.addEventListener('click', exportTable);
   $('#roster')?.addEventListener('click', exportRoster);
-  $('#adm')?.addEventListener('click', adminOpen);
-  $('#mgr-out')?.addEventListener('click', mgrOut);
   $('#mgr-xl')?.addEventListener('click', exportMgr);
   document.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => { S.mv = b.dataset.mv; render(); }));
   $('#mq')?.addEventListener('input', e => { S.mq = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#mq'); if (q) { q.focus(); q.setSelectionRange(pos, pos); } });
-  $('#adm-out')?.addEventListener('click', () => { S.admin = false; S5.token = ''; try { sessionStorage.removeItem('edu_admin'); } catch (_) {} render(); });
 }
 function loadXLSX() {
   if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -843,7 +872,7 @@ function tableRows(metric) {
   S.metric = keep;
   const KI = KEYS.map((k, i) => i).filter(i => catOK(KEYS[i])), pick = r => KI.map(i => r[i]);
   const rows = [['부서', ...KI.map(i => KN[KEYS[i]]), '합계']];
-  DEPTS.forEach((d, i) => { if (deptSel(i)) rows.push([d, ...pick(cells[i]), totals[i]]); });
+  DEPTS.forEach((d, i) => { if (deptSel(i) && deptAllowed(i)) rows.push([d, ...pick(cells[i]), totals[i]]); });
   if (unkTot) rows.push(['부서 미확인(시트1 미반영)', ...pick(unk), unkTot]);
   rows.push(['합계', ...pick(colSum), allTot]);
   return rows;
@@ -893,7 +922,35 @@ async function exportRoster() {
 // ---- 부서 관리자(구글 로그인): 본인 부서 참석자 명단 ----
 const GCID = window.EDU_GOOGLE_CLIENT_ID || '';
 S.mgr = null; S.mv = 'list'; S.mq = '';
-const mgrTag = () => `<span class="st done">부서 관리자 · ${esc(S.mgr.name)} (${esc(S.mgr.depts.join('·'))})</span><button class="btn" id="mgr-out">로그아웃</button>`;
+// 관리자 비밀번호 로그인·전체부서 계정은 모든 부서, 그 외 부서 관리자는 본인 부서만
+const deptAllowed = i => S.admin || (S.mgr && S.mgr.all) ? true : !!(S.mgr && DEPTS[i] && S.mgr.depts.includes(DEPTS[i]));
+const mgrLabel = () => S.mgr.all ? '전체 부서' : S.mgr.depts.join('·');
+// 접근 구분: admin(간호국·간호교육팀, 비밀번호) / all(전체부서 구글 계정) / mgr(간호단위 파트장, 구글 계정)
+const role = () => S.admin ? 'admin' : S.mgr ? (S.mgr.all ? 'all' : 'mgr') : null;
+const ROLE_PAGES = {admin: ['p1', 'p2', 'p3', 'p4', 'p5'], all: ['p1', 'p2', 'p3'], mgr: ['p3']};
+const ROLE_LOCKED = {all: ['p4', 'p5']}; // 메뉴에는 보이지만 🔒 잠금(간호교육팀 관리자 전용)
+const roleLabel = () => ({admin: '관리자 (간호교육팀)', all: '관리자 (간호국)', mgr: '관리자 (간호단위 파트장)'})[role()] + (S.mgr ? ' · ' + S.mgr.name : '');
+function applyAuth() {
+  const r = role(), ok = ROLE_PAGES[r] || [];
+  $('#login').hidden = !!r; document.body.classList.toggle('locked', !r);
+  $('#role').hidden = $('#logout').hidden = !r; if (r) $('#role').textContent = roleLabel();
+  const lk = ROLE_LOCKED[r] || [];
+  document.querySelectorAll('[data-page]').forEach(b => {
+    const pg = b.dataset.page, locked = lk.includes(pg);
+    b.hidden = r ? !(ok.includes(pg) || locked) : false;
+    b.classList.toggle('lk', locked); b.title = locked ? '간호교육팀 관리자만 사용할 수 있습니다' : '';
+    if (locked && !b.querySelector('.lkic')) b.insertAdjacentHTML('beforeend', '<span class="lkic" aria-hidden="true">🔒</span>');
+    if (!locked) b.querySelector('.lkic')?.remove();
+  });
+  if (r && !ok.includes(S.page)) { S.page = ok[0]; try { history.replaceState(null, '', '#' + S.page); } catch (_) {} }
+  render(); if (!r) mgrOpen();
+}
+function logout() {
+  S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = '';
+  ['edu_admin', 'edu_mgr'].forEach(k => { try { sessionStorage.removeItem(k); } catch (_) {} });
+  try { google.accounts.id.disableAutoSelect(); } catch (_) {}
+  applyAuth();
+}
 function mgrRows(useSearch) {
   const q = useSearch ? S.mq.trim() : '';
   return S.mgr.rows.filter(r => ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]) && (!q || r[3].includes(q) || String(r[4]).includes(q) || r[1].includes(q)))
@@ -916,7 +973,7 @@ function mgrSec() {
     ? rows.map(r => `<tr><td class="r">${md(r[2])}</td><td><span class="kc" ${cvar(r[0])}><i></i>${esc(m.keys[r[0]] || r[0])}</span></td><td>${esc(r[1])}</td>${multi ? `<td>${esc(DEPTS[r[5]] || '')}</td>` : ''}<td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${pos(r[6])}</td></tr>`).join('')
     : people.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.sabun)}</td>${multi ? `<td>${esc(DEPTS[p.di] || '')}</td>` : ''}<td>${pos(p.pi)}</td>${ks.map(k => `<td class="num ${p.by[k] ? '' : 'zero'}">${p.by[k] || '·'}</td>`).join('')}<td class="num tot">${p.n}</td></tr>`).join('');
   const cols = S.mv === 'list' ? 6 + (multi ? 1 : 0) : 5 + ks.length + (multi ? 1 : 0);
-  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(m.depts.join('·'))} 참석자 명단</h2><p class="hint" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
+  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(mgrLabel())} 참석자 명단</h2><p class="hint" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="tg" role="group" aria-label="보기"><button data-mv="list" aria-pressed="${S.mv === 'list'}">교육별 명단</button><button data-mv="person" aria-pressed="${S.mv === 'person'}">직원별 요약</button></div>
     <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button></div></div>
     <div class="tools" style="margin:10px 0"><input type="search" id="mq" placeholder="이름·사번·교육명 검색" value="${esc(S.mq)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
@@ -929,7 +986,7 @@ async function exportMgr() {
     const m = S.mgr, rows = mgrRows(false); if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
     const X = await loadXLSX(), wb = X.utils.book_new(), ks = Object.keys(m.keys), people = mgrPeople(rows), multi = m.depts.length > 1;
     const byK = {}; rows.forEach(r => byK[r[0]] = (byK[r[0]] || 0) + 1);
-    const sw = X.utils.aoa_to_sheet([[`${m.depts.join('·')} 참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ['교육 구분', '참석 연인원'], ...ks.filter(k => byK[k]).map(k => [m.keys[k], byK[k]]), ['합계', rows.length]]); sw['!cols'] = [{wch:26}, {wch:14}];
+    const sw = X.utils.aoa_to_sheet([[`${mgrLabel()} 참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ['교육 구분', '참석 연인원'], ...ks.filter(k => byK[k]).map(k => [m.keys[k], byK[k]]), ['합계', rows.length]]); sw['!cols'] = [{wch:26}, {wch:14}];
     X.utils.book_append_sheet(wb, sw, '요약');
     const pw = X.utils.aoa_to_sheet([['성명', '사번', ...(multi ? ['부서'] : []), '직위', ...ks.map(k => m.keys[k]), '합계'], ...people.map(p => [p.name, p.sabun, ...(multi ? [DEPTS[p.di] || ''] : []), m.pos[p.pi] || '', ...ks.map(k => p.by[k] || 0), p.n])]);
     pw['!cols'] = [{wch:10}, {wch:10}, ...(multi ? [{wch:12}] : []), {wch:14}, ...ks.map(() => ({wch:16})), {wch:8}]; pw['!freeze'] = {xSplit:0, ySplit:1};
@@ -937,7 +994,7 @@ async function exportMgr() {
     const lw = X.utils.aoa_to_sheet([['교육일', '교육 구분', '교육명', ...(multi ? ['부서'] : []), '성명', '사번', '직위'], ...rows.map(r => [r[2], m.keys[r[0]] || r[0], r[1], ...(multi ? [DEPTS[r[5]] || ''] : []), r[3], r[4], m.pos[r[6]] || ''])]);
     lw['!cols'] = [{wch:12}, {wch:20}, {wch:54}, ...(multi ? [{wch:12}] : []), {wch:10}, {wch:10}, {wch:14}]; lw['!freeze'] = {xSplit:0, ySplit:1};
     X.utils.book_append_sheet(wb, lw, '참석자 명단');
-    saveWb(X, wb, `${m.depts.join('_')}_참석자명단_${condText()}.xlsx`.replace(/[\\/:*?"<>|]/g, ''));
+    saveWb(X, wb, `${mgrLabel().replace(/[·\s]/g, '_')}_참석자명단_${condText()}.xlsx`.replace(/[\\/:*?"<>|]/g, ''));
   } catch (e) { alert(e.message || e); }
 }
 let GIS_P = null, GIS_INIT = false;
@@ -947,41 +1004,36 @@ const loadGIS = () => (window.google && google.accounts && google.accounts.id) ?
 }));
 async function mgrFetch(idToken) {
   const api = window.EDU_API; if (!api) throw new Error('백엔드(Apps Script)가 연결되지 않았습니다.');
-  const r = await fetch(api, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'myroster', idToken})});
-  const j = await r.json(); if (j.ok === false) throw new Error(j.error || '요청 실패');
-  S.mgr = {name:j.me.name, sabun:j.me.sabun, depts:j.me.depts, rows:j.rows, pos:j.pos, keys:j.keys, built:j.built};
+  const j = await fetchJson(api, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'myroster', idToken})}, true); if (j.ok === false) throw new Error(j.error || '요청 실패');
+  S.mgr = {name:j.me.name, sabun:j.me.sabun, depts:j.me.depts, all:!!j.me.all, rows:j.rows, pos:j.pos, keys:j.keys, built:j.built};
 }
 async function mgrLogin(cred) {
-  $('#gerr').textContent = '확인 중… (명단을 불러오는 데 수십 초 걸릴 수 있습니다)';
-  try { await mgrFetch(cred); try { sessionStorage.setItem('edu_mgr', cred); } catch (_) {} $('#adlg').close(); S.mq = ''; render(); }
-  catch (e) { try { sessionStorage.removeItem('edu_mgr'); } catch (_) {} $('#gerr').textContent = String(e.message || e); }
+  $('#lgerr2').textContent = '확인 중… (명단을 불러오는 데 수십 초 걸릴 수 있습니다)';
+  try { await mgrFetch(cred); try { sessionStorage.setItem('edu_mgr', cred); } catch (_) {} S.mq = ''; $('#lgerr2').textContent = ''; applyAuth(); }
+  catch (e) { try { sessionStorage.removeItem('edu_mgr'); } catch (_) {} $('#lgerr2').textContent = String(e.message || e); }
 }
-async function mgrOpen() {
-  const box = $('#gsec'); $('#gerr').textContent = '';
-  if (!GCID || !window.EDU_API) { box.hidden = true; return; }
-  box.hidden = false;
+async function mgrOpen() { // 로그인 화면의 구글 로그인 버튼
+  if (!GCID || !window.EDU_API) { $('#lgerr2').textContent = '구글 로그인이 설정되지 않았습니다. 교육팀에 문의하세요.'; return; }
   try {
     await loadGIS();
     if (!GIS_INIT) { google.accounts.id.initialize({client_id: GCID, callback: r => mgrLogin(r.credential), auto_select: false}); GIS_INIT = true; }
-    $('#gbtn').innerHTML = ''; google.accounts.id.renderButton($('#gbtn'), {theme:'outline', size:'large', text:'signin_with', locale:'ko', width:260});
-  } catch (e) { $('#gerr').textContent = String(e.message || e); }
+    $('#lgbtn').innerHTML = ''; google.accounts.id.renderButton($('#lgbtn'), {theme:'outline', size:'large', text:'signin_with', locale:'ko', width:260});
+  } catch (e) { $('#lgerr2').textContent = String(e.message || e); }
 }
-function mgrOut() { S.mgr = null; S.mq = ''; try { sessionStorage.removeItem('edu_mgr'); } catch (_) {} try { google.accounts.id.disableAutoSelect(); } catch (_) {} render(); }
-(async () => { try { const t = sessionStorage.getItem('edu_mgr'); if (t && GCID && window.EDU_API) { await mgrFetch(t); render(); } } catch (_) { try { sessionStorage.removeItem('edu_mgr'); } catch (__) {} } })();
-function adminOpen() { mgrOpen(); $('#aderr').textContent = ''; $('#adpw').value = ''; $('#adlg').showModal(); setTimeout(() => $('#adpw').focus(), 50); }
-$('#adf').addEventListener('submit', async e => {
+$('#lgf').addEventListener('submit', async e => {
   e.preventDefault();
-  const pw = $('#adpw').value.trim(); if (!pw) return;
-  if (!window.EDU_API) { $('#aderr').textContent = '백엔드(Apps Script)가 아직 연결되지 않아 사용할 수 없습니다.'; return; }
-  $('#adok').disabled = true; $('#aderr').textContent = '확인 중…';
+  const pw = $('#lgpw').value.trim(); if (!pw) return;
+  if (!window.EDU_API) { $('#lgerr').textContent = '백엔드(Apps Script)가 연결되지 않아 사용할 수 없습니다.'; return; }
+  $('#lgok').disabled = true; $('#lgerr').textContent = '확인 중… (처음에는 30초 정도 걸릴 수 있습니다)';
   try {
     S5.token = pw; await api5('GET', {action:'verify', token:pw});
     S.admin = true; try { sessionStorage.setItem('edu_admin', pw); } catch (_) {}
-    $('#adlg').close(); render();
-  } catch (err) { S5.token = ''; $('#aderr').textContent = String(err.message || err); }
-  $('#adok').disabled = false;
+    $('#lgpw').value = ''; $('#lgerr').textContent = ''; applyAuth();
+  } catch (err) { S5.token = ''; $('#lgerr').textContent = String(err.message || err); }
+  $('#lgok').disabled = false;
 });
-$('#adx').addEventListener('click', () => $('#adlg').close());
+$('#logout').addEventListener('click', logout);
+(async () => { try { const t = sessionStorage.getItem('edu_mgr'); if (t && GCID && window.EDU_API && !S.admin) { await mgrFetch(t); applyAuth(); } } catch (_) { try { sessionStorage.removeItem('edu_mgr'); } catch (__) {} } })();
 (() => { try { const pw = sessionStorage.getItem('edu_admin'); if (pw && window.EDU_API) { S5.token = pw; S.admin = true; } } catch (_) {} })();
 $('#dx').addEventListener('click', () => $('#dlg').close());
 $('#dlg').addEventListener('click', e => { if (e.target === $('#dlg')) $('#dlg').close(); });
@@ -1010,7 +1062,7 @@ async function loadRemote() {
 stamp();
 if (innerWidth <= 820) document.querySelector('.fcard').removeAttribute('open');
 const h = location.hash.slice(1); if (PAGES[h]) S.page = h;
-render();
+applyAuth();
 loadRemote().then(ok => { if (ok) render(); });
 </script>
 </body>
