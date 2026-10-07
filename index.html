@@ -125,12 +125,13 @@ button{font-size:inherit;color:inherit}
 .chart .grid{stroke:var(--line);stroke-width:1}
 .bar{cursor:pointer}.bar:hover{opacity:.8}
 .cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.catc{padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:grid;gap:8px;text-align:left;cursor:pointer;border-top:4px solid var(--cc);box-shadow:0 1px 2px rgba(17,24,39,.04)}
-.catc:hover{background:var(--sunk)}
-.catc .n{font-weight:700;font-size:15px}.catc .grp{font-size:11px;color:var(--muted)}
+.catc{padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);display:grid;gap:8px;text-align:left;cursor:pointer;box-shadow:0 1px 2px rgba(17,24,39,.04);transition:border-color .15s,box-shadow .15s}
+.catc:hover{border-color:var(--line2);box-shadow:0 3px 10px rgba(17,24,39,.07)}
+.catc .n{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}.catc .n i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--cc)}
+.catc .grp{font-size:11px;color:var(--muted)}
 .catc .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.catc .big{font-size:26px;font-weight:700;color:var(--cc)}
-.prog{height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}.prog>i{display:block;height:100%;background:var(--cc)}
+.catc .big{font-size:26px;font-weight:700;color:var(--ink)}
+.prog{height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}.prog>i{display:block;height:100%;background:var(--navy2);opacity:.85}
 .catc small{color:var(--ink2);font-size:12px}
 /* chips / toggle / buttons */
 .seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -168,12 +169,13 @@ td.tot,th.tot{font-weight:700;border-left:1px solid var(--line2)}
 .st{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
 .st.done{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
 .st.plan{color:var(--muted)}.st.warn{border-color:var(--warn);color:var(--ink2)}
-.kc{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.kc i{width:8px;height:8px;border-radius:2px;background:var(--cc)}
+.kc{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;min-width:0}.kc i{flex:none;width:8px;height:8px;border-radius:2px;background:var(--cc)}
 .note{font-size:12px;color:var(--muted)}
 .callout{padding:12px 14px;border-radius:var(--r);background:var(--accent-soft);border-left:4px solid var(--accent);font-size:13px}
 ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)}ul.plain li{margin:4px 0}
 .stat3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .mini{display:grid;gap:8px}.mini .l{display:grid;grid-template-columns:92px minmax(0,1fr) 38px;gap:8px;align-items:center;font-size:12.5px}
+.mini.share .l{grid-template-columns:140px minmax(0,1fr) 40px;gap:10px}
 .mini .b{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}.mini .b i{display:block;height:100%;background:var(--accent)}
 dialog{border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,94vw);max-height:88vh}
 dialog::backdrop{background:rgba(11,18,32,.5)}
@@ -207,6 +209,7 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   .card h2{font-size:16px}
 }
 @media (max-width:520px){
+  .mini.share .l{grid-template-columns:118px minmax(0,1fr) 36px;gap:8px}.mini.share .kc{white-space:normal;align-items:flex-start;line-height:1.3}.mini.share .kc i{margin-top:4px}
   .cats{grid-template-columns:minmax(0,1fr)}
   th,td{padding:7px 7px}
 }
@@ -456,12 +459,12 @@ function p1() {
   const hasT = ss.length > 0;
   const cards = K.map(k => {
     const n = ru.filter(r => r.k === k).length, u = new Set(ru.filter(r => r.k === k && r.p >= 0).map(r => r.p)).size;
-    if (!KN[k]) return `<div class="catc" ${cvar(k)} style="cursor:default"><div><div class="grp">${GROUP[k]}</div><div class="n">${ALLN[k]}</div></div>
+    if (!KN[k]) return `<div class="catc" ${cvar(k)} style="cursor:default"><div><div class="grp">${GROUP[k]}</div><div class="n"><i></i>${ALLN[k]}</div></div>
       <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>참석 연인원</small></div>
       <small>실인원 ${fmt(u)}명 · 교육 회차는 집계하지 않습니다</small></div>`;
     const a = ss.filter(s => s.k === k), d = a.filter(s => s.st === 'done');
     const pct = a.length ? Math.round(d.length / a.length * 100) : 0;
-    return `<button class="catc" data-cat="${k}" ${cvar(k)}><div><div class="grp">${GROUP[k]}</div><div class="n">${KN[k]}</div></div>
+    return `<button class="catc" data-cat="${k}" ${cvar(k)}><div><div class="grp">${GROUP[k]}</div><div class="n"><i></i>${KN[k]}</div></div>
       <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>실시 ${d.length} / 계획 ${a.length}회</small></div>
       <div class="prog"><i style="width:${pct}%"></i></div>
       <small>평균 ${d.length ? (n / d.length).toFixed(1) : '–'}명/회 · 실시율 ${pct}%</small></button>`;
@@ -490,7 +493,7 @@ function p1() {
 function shareBars(ru, K) {
   const tot = ru.length || 1;
   const sumG = ks => ru.filter(r => ks.includes(r.k)).length;
-  return `<div class="mini">${K.map(k => { const n = ru.filter(r => r.k === k).length;
+  return `<div class="mini share">${K.map(k => { const n = ru.filter(r => r.k === k).length;
     return `<div class="l"><span class="kc" ${cvar(k)}><i></i>${ALLN[k]}</span><span class="b"><i style="width:${n / tot * 100}%;background:var(--c-${k})"></i></span><span class="num" style="text-align:right">${Math.round(n / tot * 100)}%</span></div>`; }).join('')}</div>
     <p class="note" style="margin-top:12px">${GK.map(([n, ks]) => `${n} ${fmt(sumG(ks))}명`).join(' · ')}</p>`;
 }
