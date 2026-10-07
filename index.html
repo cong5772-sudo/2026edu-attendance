@@ -213,6 +213,7 @@ dialog::backdrop{background:rgba(11,18,32,.5)}
   .stat3{grid-template-columns:minmax(0,1fr)}
   .kpi{padding:16px}.kpi .val{font-size:28px}.kpi:first-child .val{font-size:32px}
   .head h1{font-size:19px}
+  .tw{max-height:none}
   .card h2{font-size:16px}
 }
 @media (max-width:520px){
@@ -324,7 +325,7 @@ let D = window.EDU_DATA;
 const KEYS = Object.keys(D.keys);
 const KN = D.keys;
 const GROUP = {REG:'직무교육',EMG:'직무교육',TOP:'직무교육',DED:'직무교육',SEN:'관리자교육',PTL:'관리자교육',MOV:'부서이동자 교육',SPC:'부서별 특성화 교육'};
-const DEPTS = D.depts, POS = D.pos;
+let DEPTS = D.depts, POS = D.pos, GROUPS = []; // 서버에서 새 데이터를 받으면 prep() 에서 다시 설정
 const S = {page:'p1', k:'all', metric:'rows', plan:true, dept:null, admin:false};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -347,6 +348,7 @@ function prep(d) {
   KX = Object.keys(d.keysx || {}); KXN = d.keysx || {};
   ATTX = (d.attx || []).map(r => ({k:KX[r[0]], di:r[1], pi:r[2], p:r[3], ym:r[4]}));
   ALLK = [...KEYS, ...KX]; ALLN = {...KN, ...KXN};
+  DEPTS = d.depts; POS = d.pos; buildGroups(); // 부서 목록이 바뀌면(예: 간호국·간호교육팀 추가) 인덱스·그룹도 함께 갱신
 }
 prep(D);const ALLC = {REG:'--c-REG',EMG:'--c-EMG',TOP:'--c-TOP',DED:'--c-DED',SEN:'--c-SEN',PTL:'--c-PTL',MOV:'--c-MOV',SPC:'--c-SPC'};
 const MONTHS = (() => { const out = []; for (let i = 0; i < 12; i++) { const y = 2026 + Math.floor((2 + i) / 12), m = (2 + i) % 12 + 1; out.push(`${y}-${String(m).padStart(2,'0')}`); } return out; })();
@@ -356,17 +358,19 @@ const YEARS = [...new Set(MONTHS.map(m => +m.slice(0, 4)))];
 // 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
 S.p4done = false; S.p4dupdone = false; S.p4diffdone = false; S.p4noddone = false;
 Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null}); // 기준일시(연도)·월·세부부서는 다중 선택
-const GROUPS = [
-  ['병동', DEPTS.slice(0, 17)],
-  ['중환자실', ['MFICU(MFI)','NICU','MICU','SICU','EICU']],
-  ['수술·회복', ['수술실(OR)','회복실(RCR)']],
-  ['외래·AK', ['외래(OPD)','AK']],
-  ['응급실', ['ER(ERD)']],
-  ['전담(PAM)', ['PAM']],
-  ['간호국', ['간호국']],
-  ['간호교육팀', ['간호교육팀']],
-  ['기타', ['기타']]
-].map(([n, ds]) => [n, ds.map(d => DEPTS.indexOf(d)).filter(i => i >= 0)]);
+function buildGroups() {
+  GROUPS = [
+    ['병동', DEPTS.slice(0, 17)],
+    ['중환자실', ['MFICU(MFI)','NICU','MICU','SICU','EICU']],
+    ['수술·회복', ['수술실(OR)','회복실(RCR)']],
+    ['외래·AK', ['외래(OPD)','AK']],
+    ['응급실', ['ER(ERD)']],
+    ['전담(PAM)', ['PAM']],
+    ['간호국', ['간호국']],
+    ['간호교육팀', ['간호교육팀']],
+    ['기타', ['기타']]
+  ].map(([n, ds]) => [n, ds.map(d => DEPTS.indexOf(d)).filter(i => i >= 0)]);
+}
 const grpIdx = () => S.grp === 'all' ? null : GROUPS.find(g => g[0] === S.grp)[1];
 const deptActive = () => S.grp !== 'all' || S.units.size > 0;
 const deptSel = i => i < 0 ? !deptActive() : (S.grp === 'all' || grpIdx().includes(i)) && (!S.units.size || S.units.has(i));
@@ -1217,8 +1221,8 @@ function stamp() { $('#asof').textContent = (D.checks && D.checks.s1max > D.asof
 async function loadRemote() {
   const api = window.EDU_API; if (!api) return false;
   try {
-    const r = await fetch(api + (api.includes('?') ? '&' : '?') + 'action=data&t=' + Date.now(), {cache:'no-store'});
-    const j = await r.json();
+    // 구글 웹앱은 첫 호출에 일시 오류(HTML)가 나는 경우가 있어 한 번 더 시도
+    const j = await fetchJson(api + (api.includes('?') ? '&' : '?') + 'action=data&t=' + Date.now(), {cache:'no-store'}, true);
     if (j && j.sessions) { prep(j); stamp(); return true; }
   } catch (_) {}
   return false;
