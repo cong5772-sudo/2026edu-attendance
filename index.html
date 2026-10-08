@@ -261,6 +261,34 @@ body.locked{overflow:hidden}
 #role{font-weight:600;color:var(--navy)}
 .navbtn.lk{opacity:.5;cursor:not-allowed}.navbtn .lkic{margin-left:auto;font-size:12px}
 @media (max-width:760px){.lg-grid{grid-template-columns:1fr}.lg-head h1{font-size:19px}}
+/* 참석자 명단: 날짜·성명·사번·직위는 줄바꿈하지 않음 */
+.rs td,.rs thead th{white-space:nowrap}.rs td.c-t{white-space:normal;min-width:220px}
+.phdr{display:none}
+/* 인쇄(부서 파트장 출력물): 메뉴·조회 조건·버튼을 빼고 표만 A4 한 열로 */
+@media print{
+  @page{size:A4 portrait;margin:12mm 10mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff!important;color:#111!important;font-size:11px}
+  .topbar,.side,#login,#tip,dialog,.refresh,.btn,.tg,#mq,.no-print{display:none!important}
+  .app{display:block!important;padding:0!important;max-width:none!important}
+  .main{padding:0!important;margin:0!important;width:auto!important;max-width:none!important}
+  .head{margin:0 0 6px!important}.head h1{font-size:17px!important;margin:0 0 2px}.head p{font-size:11px!important;margin:0}
+  .phdr{display:block;margin:0 0 10px;padding:6px 0;border-top:2px solid #111;border-bottom:1px solid #999;font-size:10.5px;color:#222;line-height:1.6}
+  .card{box-shadow:none!important;border:0!important;padding:0!important;margin:0 0 10px!important;background:#fff!important}
+  .tw{overflow:visible!important;max-height:none!important;border:1px solid #bbb!important;border-radius:0!important}
+  table{font-size:10.5px!important}th,td{padding:3px 6px!important;border-bottom:1px solid #ccc!important}
+  thead{display:table-header-group}thead th{position:static!important;background:#eef1f5!important;color:#111!important}
+  tbody th{position:static!important}tr{break-inside:avoid}
+  tbody tr:hover td,tbody tr:hover th{background:none!important}
+  .note,.hint{font-size:10px!important;color:#444!important}
+  h2{font-size:13px!important;margin:0 0 4px!important}
+  .pnote{display:block!important}
+  .nop{display:none!important}
+  #mgr{margin-top:14px!important}
+  .rs thead th{white-space:normal!important;word-break:keep-all;font-size:10px!important;padding:3px 4px!important}
+  .rs td.num{padding:3px 4px!important}
+}
+.pnote{display:none}
 </style>
 </head>
 <body>
@@ -480,7 +508,7 @@ function render() {
   if (!role()) { $('#view').innerHTML = ''; return; }
   document.querySelectorAll('[data-page]').forEach(b => b.toggleAttribute('aria-current', b.dataset.page === S.page) || (b.dataset.page === S.page ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current')));
   document.querySelectorAll('[data-page]').forEach(b => { if (b.dataset.page === S.page) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  $('#pt').textContent = PAGES[S.page][0]; $('#ps').textContent = PAGES[S.page][1];
+  $('#pt').textContent = PAGES[S.page][0]; $('#ps').textContent = (role() === 'mgr' && S.page === 'p3') ? `${mgrLabel()} 간호단위의 6개 구분별 참석 인원과 참석자 명단입니다.` : PAGES[S.page][1];
   document.title = PAGES[S.page][0] + ' · 간호교육 참석현황';
   CTX = null;
   if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && catOK(a.s.k) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
@@ -672,14 +700,17 @@ function p3() {
   const unkNote = unkTot ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : '';
   const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSumV.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
   const dp = S.dept != null ? deptPanel(S.dept) : '';
+  const own = S.mgr && !S.mgr.all; // 간호단위 파트장(본인 부서만)
+  const pdt = new Date(), pnow = `${pdt.getFullYear()}-${String(pdt.getMonth() + 1).padStart(2, '0')}-${String(pdt.getDate()).padStart(2, '0')} ${String(pdt.getHours()).padStart(2, '0')}:${String(pdt.getMinutes()).padStart(2, '0')}`;
   return `
-  <div class="card tools" style="justify-content:flex-end">
-    <div style="display:flex;gap:8px;align-items:center"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
+  <div class="phdr"><b>${own ? esc(mgrLabel()) + ' 간호단위' : '부서별 직무교육 참석현황'}</b> · 조회 조건 ${esc(filterSummary())} · 데이터 기준 ${esc(D.checks && D.checks.s1max > D.asof ? D.checks.s1max : D.asof)} (시트 갱신 ${esc(D.built || D.updated)}) · 출력 ${pnow}${S.mgr ? ' · ' + esc(S.mgr.name) : ''}<br>인제대학교 해운대백병원 간호국 간호교육팀 · 참석 연인원 기준(한 교육에 한 번 참석하면 1)</div>
+  <div class="card tools nop" style="justify-content:flex-end">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
   </div>
   <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
-  ${unkNote}
-  <p class="note">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 15A→간호교육팀, 목록에 없는 부서→기타).</p>
-  ${dp}
+  ${own ? '' : unkNote}
+  ${own ? '' : `<p class="note nop">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 15A→간호교육팀, 목록에 없는 부서→기타).</p>`}
+  ${own ? '' : dp}
   ${mgrSec()}`;
 }
 function deptPanel(i) {
@@ -988,6 +1019,7 @@ function bind() {
   $('#xl')?.addEventListener('click', exportTable);
   $('#roster')?.addEventListener('click', exportRoster);
   $('#mgr-xl')?.addEventListener('click', exportMgr);
+  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => window.print()));
   document.querySelectorAll('input[data-done]').forEach(ch => ch.addEventListener('change', () => {
     const x = P4ITEMS[+ch.dataset.done]; if (!x) return;
     const done = doneLoad(), k = mkey(x);
@@ -1141,13 +1173,13 @@ function mgrSec() {
     ? rows.map(r => `<tr><td class="r c-d">${md(r[2])}</td><td class="c-k"><span class="kc" ${cvar(r[0])}><i></i>${esc(m.keys[r[0]] || r[0])}</span></td><td class="c-t">${esc(r[1])}</td>${multi ? `<td class="c-u">${esc(DEPTS[r[5]] || '')}</td>` : ''}<td class="c-n">${esc(r[3])}</td><td class="c-s">${esc(r[4])}</td><td class="c-p">${pos(r[6])}</td></tr>`).join('')
     : people.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.sabun)}</td>${multi ? `<td>${esc(DEPTS[p.di] || '')}</td>` : ''}<td>${pos(p.pi)}</td>${ks.map(k => `<td class="num ${p.by[k] ? '' : 'zero'}">${p.by[k] || '·'}</td>`).join('')}<td class="num tot">${p.n}</td></tr>`).join('');
   const cols = S.mv === 'list' ? 6 + (multi ? 1 : 0) : 5 + ks.length + (multi ? 1 : 0);
-  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(mgrLabel())} 참석자 명단</h2><p class="hint" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
+  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(mgrLabel())} 참석자 명단</h2><p class="hint nop" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="tg" role="group" aria-label="보기"><button data-mv="list" aria-pressed="${S.mv === 'list'}">교육별 명단</button><button data-mv="person" aria-pressed="${S.mv === 'person'}">직원별 요약</button></div>
-    <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button></div></div>
+    <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button><button class="btn" data-print>인쇄</button></div></div>
     <div class="tools" style="margin:10px 0"><input type="search" id="mq" placeholder="이름·사번·교육명 검색" value="${esc(S.mq)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
     <span class="note">참석 연인원 <b>${fmt(rows.length)}</b>건${S.mv === 'person' ? ` · 직원 <b>${fmt(people.length)}</b>명` : ''}${rows.length !== all.length ? ` (검색 전 ${fmt(all.length)}건)` : ''}</span></div>
     <div class="tw tl"><table class="rs${S.mv === 'list' ? ' rl' : ''}"><thead>${th}</thead><tbody>${body || `<tr><td colspan="${cols}" class="msg">조회 조건에 해당하는 참석자가 없습니다.</td></tr>`}</tbody></table></div>
-    <p class="note" style="margin:8px 0 0">이름·사번이 포함된 개인정보입니다. 내려받은 파일은 부서 내에서만 사용하고 외부로 공유하지 마세요.</p></section>`;
+    <p class="note" style="margin:8px 0 0">이름·사번이 포함된 개인정보입니다. 내려받은 파일·출력물은 부서 내에서만 사용하고 외부로 공유하지 마세요.</p></section>`;
 }
 async function exportMgr() {
   try {
@@ -1162,7 +1194,7 @@ async function exportMgr() {
     const lw = X.utils.aoa_to_sheet([['교육일', '교육 구분', '교육명', ...(multi ? ['부서'] : []), '성명', '사번', '직위'], ...rows.map(r => [r[2], m.keys[r[0]] || r[0], r[1], ...(multi ? [DEPTS[r[5]] || ''] : []), r[3], r[4], m.pos[r[6]] || ''])]);
     lw['!cols'] = [{wch:12}, {wch:20}, {wch:54}, ...(multi ? [{wch:12}] : []), {wch:10}, {wch:10}, {wch:14}]; lw['!freeze'] = {xSplit:0, ySplit:1};
     X.utils.book_append_sheet(wb, lw, '참석자 명단');
-    saveWb(X, wb, `${mgrLabel().replace(/[·\s]/g, '_')}_참석자명단_${condText()}.xlsx`.replace(/[\\/:*?"<>|]/g, ''));
+    saveWb(X, wb, `${mgrLabel().replace(/[·\s]/g, '_')}_참석자명단_${condText().replace(/_전체 부서$/, '')}.xlsx`.replace(/[\\/:*?"<>|]/g, ''));
   } catch (e) { alert(e.message || e); }
 }
 let GIS_P = null, GIS_INIT = false;
