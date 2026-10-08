@@ -513,8 +513,27 @@ function render() {
   CTX = null;
   if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && catOK(a.s.k) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
   renderFilters();
+  ensurePrev();
   $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5})[S.page]();
   bind();
+}
+// 간호교육팀 관리자: 부서 필터에서 1개 부서를 고르면 그 부서 파트장에게 보이는 참석자 명단을 함께 표시(미리보기)
+async function ensurePrev() {
+  const want = (S.admin && S.page === 'p3' && S.units.size === 1) ? DEPTS[[...S.units][0]] : null;
+  if (!want) { S.prev = null; return; }
+  if (S.prev && S.prev.depts[0] === want) return;
+  if (S.prevBusy === want || S.prevErr === want) return;
+  S.prevBusy = want;
+  try {
+    const j = S.rosterAll || (S.rosterAll = await api5('GET', {action: 'roster', token: S5.token}));
+    const di = j.depts.indexOf(want);
+    const rows = j.rows.filter(r => r[0] in KN && r[5] === di);
+    const keys = {}; Object.keys(KN).forEach(k => keys[k] = KN[k]);
+    S.prev = {name: '관리자 미리보기', sabun: '', depts: [want], all: false, rows, pos: j.pos, keys, built: j.built};
+    S.prevErr = null;
+  } catch (e) { S.prev = null; S.prevErr = want; }
+  S.prevBusy = null;
+  if (S.page === 'p3' && S.admin && S.units.size === 1 && DEPTS[[...S.units][0]] === want) render();
 }
 
 // ---- charts ----
@@ -1093,9 +1112,9 @@ async function exportRoster() {
   const btn = $('#roster'); if (btn) { btn.disabled = true; btn.textContent = '명단 불러오는 중…'; }
   try {
     const [X, j] = await Promise.all([loadXLSX(), api5('GET', {action:'roster', token:S5.token})]);
-    const order = [...Object.keys(KN), ...Object.keys(j.keys || {}).filter(k => !(k in KN))];
+    const order = Object.keys(KN); // 대시보드의 6개 구분만(부서이동자 교육·부서별 특성화 교육 제외)
     const nameOf = k => (j.keys || {})[k] || KN[k] || k;
-    const rows = j.rows.filter(r => ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]));
+    const rows = j.rows.filter(r => r[0] in KN && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]));
     if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
     const wb = X.utils.book_new();
     const byDept = {}; rows.forEach(r => (byDept[r[5]] ??= []).push(r));
@@ -1124,7 +1143,9 @@ const GCID = window.EDU_GOOGLE_CLIENT_ID || '';
 S.mgr = null; S.mv = 'list'; S.mq = '';
 // 관리자 비밀번호 로그인·전체부서 계정은 모든 부서, 그 외 부서 관리자는 본인 부서만
 const deptAllowed = i => S.admin || (S.mgr && S.mgr.all) ? true : !!(S.mgr && DEPTS[i] && S.mgr.depts.includes(DEPTS[i]));
-const mgrLabel = () => S.mgr.all ? '전체 부서' : S.mgr.depts.join('·');
+// 파트장 명단 화면용 데이터: 구글 로그인(S.mgr) 또는 간호교육팀 관리자가 부서 1곳을 고른 미리보기(S.prev)
+const MG = () => S.mgr || S.prev;
+const mgrLabel = () => { const m = MG(); return m.all ? '전체 부서' : m.depts.join('·'); };
 // 접근 구분: admin(간호국·간호교육팀, 비밀번호) / all(전체부서 구글 계정) / mgr(간호단위 파트장, 구글 계정)
 const role = () => S.admin ? 'admin' : S.mgr ? (S.mgr.all ? 'all' : 'mgr') : null;
 const ROLE_PAGES = {admin: ['p1', 'p2', 'p3', 'p4', 'p5'], all: ['p1', 'p2', 'p3'], mgr: ['p3']};
@@ -1146,14 +1167,14 @@ function applyAuth() {
   render(); if (!r) mgrOpen();
 }
 function logout() {
-  S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = '';
+  S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = ''; S.prev = null; S.rosterAll = null; S.prevErr = null;
   ['edu_admin', 'edu_mgr'].forEach(k => { try { sessionStorage.removeItem(k); } catch (_) {} });
   try { google.accounts.id.disableAutoSelect(); } catch (_) {}
   applyAuth();
 }
 function mgrRows(useSearch) {
   const q = useSearch ? S.mq.trim() : '';
-  return S.mgr.rows.filter(r => ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]) && (!q || r[3].includes(q) || String(r[4]).includes(q) || r[1].includes(q)))
+  return MG().rows.filter(r => ymOK(r[7]) && catOK(r[0]) && deptSel(r[5]) && (!q || r[3].includes(q) || String(r[4]).includes(q) || r[1].includes(q)))
     .sort((a, b) => a[2].localeCompare(b[2]) || a[1].localeCompare(b[1]) || a[3].localeCompare(b[3], 'ko'));
 }
 function mgrPeople(rows) {
@@ -1162,7 +1183,7 @@ function mgrPeople(rows) {
   return [...m.values()].sort((a, b) => a.di - b.di || a.name.localeCompare(b.name, 'ko'));
 }
 function mgrSec() {
-  const m = S.mgr; if (!m) return '';
+  const m = MG(); if (!m) return '';
   const rows = mgrRows(true), all = mgrRows(false), people = mgrPeople(rows), multi = m.depts.length > 1;
   const pos = i => esc(m.pos[i] || '');
   const ks = Object.keys(m.keys);
@@ -1173,7 +1194,7 @@ function mgrSec() {
     ? rows.map(r => `<tr><td class="r c-d">${md(r[2])}</td><td class="c-k"><span class="kc" ${cvar(r[0])}><i></i>${esc(m.keys[r[0]] || r[0])}</span></td><td class="c-t">${esc(r[1])}</td>${multi ? `<td class="c-u">${esc(DEPTS[r[5]] || '')}</td>` : ''}<td class="c-n">${esc(r[3])}</td><td class="c-s">${esc(r[4])}</td><td class="c-p">${pos(r[6])}</td></tr>`).join('')
     : people.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.sabun)}</td>${multi ? `<td>${esc(DEPTS[p.di] || '')}</td>` : ''}<td>${pos(p.pi)}</td>${ks.map(k => `<td class="num ${p.by[k] ? '' : 'zero'}">${p.by[k] || '·'}</td>`).join('')}<td class="num tot">${p.n}</td></tr>`).join('');
   const cols = S.mv === 'list' ? 6 + (multi ? 1 : 0) : 5 + ks.length + (multi ? 1 : 0);
-  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(mgrLabel())} 참석자 명단</h2><p class="hint nop" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
+  return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(mgrLabel())} 참석자 명단</h2><p class="hint nop" style="margin:0">${S.mgr ? `${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다` : '파트장에게 보이는 화면 미리보기 · 부서 필터에서 1개 부서를 선택했을 때 표시됩니다'} · ${esc(filterSummary())}</p></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="tg" role="group" aria-label="보기"><button data-mv="list" aria-pressed="${S.mv === 'list'}">교육별 명단</button><button data-mv="person" aria-pressed="${S.mv === 'person'}">직원별 요약</button></div>
     <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button></div></div>
     <div class="tools" style="margin:10px 0"><input type="search" id="mq" placeholder="이름·사번·교육명 검색" value="${esc(S.mq)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
@@ -1193,7 +1214,7 @@ function printDoc(pdf) {
 }
 async function exportMgr() {
   try {
-    const m = S.mgr, rows = mgrRows(false); if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
+    const m = MG(), rows = mgrRows(false); if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
     const X = await loadXLSX(), wb = X.utils.book_new(), ks = Object.keys(m.keys), people = mgrPeople(rows), multi = m.depts.length > 1;
     const byK = {}; rows.forEach(r => byK[r[0]] = (byK[r[0]] || 0) + 1);
     const sw = X.utils.aoa_to_sheet([[`${mgrLabel()} 참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ['교육 구분', '참석 연인원'], ...ks.filter(k => byK[k]).map(k => [m.keys[k], byK[k]]), ['합계', rows.length]]); sw['!cols'] = [{wch:26}, {wch:14}];
