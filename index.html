@@ -705,7 +705,7 @@ function p3() {
   return `
   <div class="phdr"><b>${own ? esc(mgrLabel()) + ' 간호단위' : '부서별 직무교육 참석현황'}</b> · 조회 조건 ${esc(filterSummary())} · 데이터 기준 ${esc(D.checks && D.checks.s1max > D.asof ? D.checks.s1max : D.asof)} (시트 갱신 ${esc(D.built || D.updated)}) · 출력 ${pnow}${S.mgr ? ' · ' + esc(S.mgr.name) : ''}<br>인제대학교 해운대백병원 간호국 간호교육팀 · 참석 연인원 기준(한 교육에 한 번 참석하면 1)</div>
   <div class="card tools nop" style="justify-content:flex-end">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
   </div>
   <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${own ? '' : unkNote}
@@ -1019,7 +1019,7 @@ function bind() {
   $('#xl')?.addEventListener('click', exportTable);
   $('#roster')?.addEventListener('click', exportRoster);
   $('#mgr-xl')?.addEventListener('click', exportMgr);
-  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => window.print()));
+  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printDoc(b.dataset.print === 'pdf')));
   document.querySelectorAll('input[data-done]').forEach(ch => ch.addEventListener('change', () => {
     const x = P4ITEMS[+ch.dataset.done]; if (!x) return;
     const done = doneLoad(), k = mkey(x);
@@ -1175,11 +1175,21 @@ function mgrSec() {
   const cols = S.mv === 'list' ? 6 + (multi ? 1 : 0) : 5 + ks.length + (multi ? 1 : 0);
   return `<section class="card" id="mgr"><div class="tools"><div><h2>${esc(mgrLabel())} 참석자 명단</h2><p class="hint nop" style="margin:0">${esc(m.name)}님 · 로그인한 계정에 등록된 부서만 조회됩니다 · ${esc(filterSummary())}</p></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="tg" role="group" aria-label="보기"><button data-mv="list" aria-pressed="${S.mv === 'list'}">교육별 명단</button><button data-mv="person" aria-pressed="${S.mv === 'person'}">직원별 요약</button></div>
-    <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button><button class="btn" data-print>인쇄</button></div></div>
+    <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button></div></div>
     <div class="tools" style="margin:10px 0"><input type="search" id="mq" placeholder="이름·사번·교육명 검색" value="${esc(S.mq)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
     <span class="note">참석 연인원 <b>${fmt(rows.length)}</b>건${S.mv === 'person' ? ` · 직원 <b>${fmt(people.length)}</b>명` : ''}${rows.length !== all.length ? ` (검색 전 ${fmt(all.length)}건)` : ''}</span></div>
     <div class="tw tl"><table class="rs${S.mv === 'list' ? ' rl' : ''}"><thead>${th}</thead><tbody>${body || `<tr><td colspan="${cols}" class="msg">조회 조건에 해당하는 참석자가 없습니다.</td></tr>`}</tbody></table></div>
     <p class="note" style="margin:8px 0 0">이름·사번이 포함된 개인정보입니다. 내려받은 파일·출력물은 부서 내에서만 사용하고 외부로 공유하지 마세요.</p></section>`;
+}
+// 인쇄 / PDF 저장: 브라우저 인쇄 창을 열고, 파일 이름 기본값을 「부서_참석현황_날짜」로 지정
+function printDoc(pdf) {
+  if (!printDoc.t0) printDoc.t0 = document.title;
+  const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const who = S.mgr && !S.mgr.all ? mgrLabel().replace(/[·\s]/g, '_') : '부서별';
+  if (pdf) { let seen = false; try { seen = sessionStorage.getItem('edu_pdf_hint'); sessionStorage.setItem('edu_pdf_hint', '1'); } catch (_) {} if (!seen) alert('인쇄 창이 열리면 「대상(프린터)」을 「PDF로 저장」으로 선택하고 저장하세요.'); }
+  document.title = `${who}_참석현황_${ymd}`;
+  window.addEventListener('afterprint', () => { if (printDoc.t0) { document.title = printDoc.t0; printDoc.t0 = null; } }, {once: true});
+  window.print();
 }
 async function exportMgr() {
   try {
