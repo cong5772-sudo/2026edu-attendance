@@ -54,6 +54,7 @@ button{font-size:inherit;color:inherit}
 .app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;max-width:1560px;margin:0 auto;padding:24px clamp(16px,2vw,28px) 48px}
 .side{position:sticky;top:76px;display:grid;gap:14px;align-content:start;max-height:calc(100vh - 92px);overflow:auto;padding-bottom:4px}
 .navcard{background:linear-gradient(160deg,var(--navy2),var(--navy));border-radius:16px;padding:10px;box-shadow:0 6px 18px rgba(31,58,104,.22)}
+@media (min-width:821px){.navcard{position:sticky;top:0;z-index:5}} /* 조회 조건이 길어 왼쪽 열이 스크롤돼도 페이지 탭은 위에 고정 */
 .navlist{display:grid;gap:4px}
 .navbtn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:none;color:rgba(255,255,255,.82);font-weight:600;font-size:14.5px;text-align:left;cursor:pointer}
 .navbtn .ic{width:18px;text-align:center;opacity:.85}
@@ -719,6 +720,16 @@ function p7() {
     });
     courses = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
   }
+  // 부서별 참석현황(부서 × 구분) — 부서별 참석현황 페이지와 같은 표
+  const dm = DEPTS.map(() => ({})), dUnk = {}; let dUnkT = 0;
+  at.forEach(a => { if (a.di < 0) { dUnk[a.k] = (dUnk[a.k] || 0) + 1; dUnkT++; return; } dm[a.di][a.k] = (dm[a.di][a.k] || 0) + 1; });
+  const dRows = DEPTS.map((d, i) => ({d, i, t: sum(sel, k => dm[i][k] || 0)})).filter(r => deptSel(r.i) && deptAllowed(r.i));
+  const cN = k => courses ? courses.filter(c => c.k === k).length : null;
+  const dHead = sel.map(k => `<th ${cvar(k)}><span class="cdot"></span>${esc(KXN[k])}${courses ? `<br><span class="note num">${cN(k)}회 실시</span>` : ''}</th>`).join('');
+  const dBody = dRows.map(r => `<tr><th>${esc(r.d)}</th>${sel.map(k => { const n = dm[r.i][k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot ${r.t ? '' : 'zero'}">${r.t ? fmt(r.t) : '·'}</td></tr>`).join('');
+  const dUnkHtml = dUnkT ? `<tr><th title="시트1 참석자 명단에 아직 없는 교육(시트2 인원)">부서 미확인*</th>${sel.map(k => `<td class="num ${dUnk[k] ? '' : 'zero'}">${dUnk[k] ? fmt(dUnk[k]) : '·'}</td>`).join('')}<td class="num tot">${fmt(dUnkT)}</td></tr>` : '';
+  const dFoot = dUnkHtml + `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(at.filter(a => a.k === k).length)}</td>`).join('')}<td class="num tot">${fmt(at.length)}</td></tr>`;
+  const pdt = new Date(), pnow = `${pdt.getFullYear()}-${String(pdt.getMonth() + 1).padStart(2, '0')}-${String(pdt.getDate()).padStart(2, '0')} ${String(pdt.getHours()).padStart(2, '0')}:${String(pdt.getMinutes()).padStart(2, '0')}`;
   const chips = KX.map(k => `<button class="chip" data-kx="${k}" aria-pressed="${S7.k === k}" ${cvar(k)}><span class="sw"></span>${KXN[k]}</button>`).join('');
   const posRows = POS.map((p, i) => ({p, i, n: at.filter(a => a.pi === i).length})).filter(x => x.n);
   const pmax = Math.max(1, ...posRows.map(x => x.n));
@@ -739,8 +750,9 @@ function p7() {
     ? `<section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">참석 인원은 교육·사번 중복을 제거한 값입니다 · 시트1에 아직 반영되지 않은 교육은 목록에 나오지 않습니다</p></div></div>
       <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th></tr></thead><tbody>${courses.map(courseRow).join('') || '<tr><td colspan="4">해당 교육이 없습니다</td></tr>'}</tbody></table></div></section>`
     : `<section class="card"><h2>교육 목록</h2><p class="hint">${S5.token ? (S7.err ? esc(S7.err) : '불러오는 중…') : '교육별 목록은 간호교육팀 관리자 로그인에서 볼 수 있습니다.'}</p></section>`;
-  return `<div class="stack">
-  <div class="card"><div class="seg">
+  return `<div class="phdr"><b>부서이동자·부서별 특성화 교육 참석현황</b> · 조회 조건 ${esc(filterSummary())} · 출력 ${pnow}</div>
+  <div class="stack">
+  <div class="card nop"><div class="seg">
     <button class="chip" data-kx="all" aria-pressed="${S7.k === 'all'}">전체</button>${chips}
   </div></div>
   <div class="kpis">
@@ -749,6 +761,10 @@ function p7() {
     <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(real)}<small>명</small></div><div class="sub">중복 제거</div></div>
     <div class="kpi"><div class="lab">참여 부서</div><div class="val">${fmt(deptN)}<small>개</small></div><div class="sub">부서 확인된 참석 기준</div></div>
   </div>
+  <section class="card"><div class="tools"><div><h2>부서별 참석현황</h2><p class="hint" style="margin:0">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 2개 교육에 참석하면 2입니다.</p></div>
+    <div class="nop" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a7="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 고르세요">PDF 저장</button></div></div>
+    <div class="tw" style="margin-top:10px"><table><thead><tr><th>부서</th>${dHead}<th class="tot">합계</th></tr></thead><tbody>${dBody}${dFoot}</tbody></table></div>
+    ${dUnkT ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : ''}</section>
   <section class="card"><h2>월별 참석 연인원${S7.k === 'all' ? '' : ' · ' + esc(KXN[S7.k])}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S7.k === 'all' ? legend(KX) : ''}${stackChart(months, o, sel, 220)}</section>
   <section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준</p>
     <div class="tw"><table><thead><tr><th>월</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${mBody}</tbody><tfoot>${mFoot}</tfoot></table></div></section>
@@ -758,6 +774,30 @@ function p7() {
     <div class="tw"><table><thead><tr><th>직위</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${pBody || `<tr><td colspan="${sel.length + 2}" class="msg">참석 데이터 없음</td></tr>`}</tbody><tfoot>${pFoot}</tfoot></table></div></section>
   ${courseSec}
   </div>`;
+}
+
+async function act7(el) {
+  if (el.dataset.a7 !== 'xl') return;
+  try {
+    const sel = S7.k === 'all' ? KX : [S7.k], at = attXF().filter(a => sel.includes(a.k));
+    const dm = DEPTS.map(() => ({})), dUnk = {};
+    at.forEach(a => { if (a.di < 0) { dUnk[a.k] = (dUnk[a.k] || 0) + 1; return; } dm[a.di][a.k] = (dm[a.di][a.k] || 0) + 1; });
+    const rows = DEPTS.map((d, i) => ({d, i})).filter(r => deptSel(r.i) && deptAllowed(r.i)).map(r => [r.d, ...sel.map(k => dm[r.i][k] || 0), sum(sel, k => dm[r.i][k] || 0)]);
+    if (Object.keys(dUnk).length) rows.push(['부서 미확인', ...sel.map(k => dUnk[k] || 0), sum(sel, k => dUnk[k] || 0)]);
+    rows.push(['합계', ...sel.map(k => at.filter(a => a.k === k).length), at.length]);
+    const X = await loadXLSX(), wb = X.utils.book_new();
+    const ws = X.utils.aoa_to_sheet([[`부서이동자·부서별 특성화 교육 참석현황 · ${filterSummary()}`], [], ['부서', ...sel.map(k => KXN[k]), '합계'], ...rows]);
+    ws['!cols'] = [{wch: 16}, ...sel.map(() => ({wch: 20})), {wch: 10}];
+    X.utils.book_append_sheet(wb, ws, '부서별 참석현황');
+    if (S.rosterAll) {
+      const m = new Map();
+      S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => { const key = r[0] + '|' + r[1] + '|' + r[2]; const o = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0}).get(key); o.n++; });
+      const list = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
+      const w2 = X.utils.aoa_to_sheet([['일자', '구분', '교육주제', '참석 인원'], ...list.map(c => [c.d, KXN[c.k], c.t, c.n])]);
+      w2['!cols'] = [{wch: 12}, {wch: 18}, {wch: 50}, {wch: 10}]; X.utils.book_append_sheet(wb, w2, '교육 목록');
+    }
+    X.writeFile(wb, ('부서이동자_특성화교육_참석현황_' + filterSummary().split(' · ').slice(0, 2).join('_') + '.xlsx').replace(/[\\/:*?"<>|]/g, ''));
+  } catch (e) { alert(e.message || e); }
 }
 
 // ---- P3 ----
@@ -1183,6 +1223,7 @@ function bind() {
     else S5.sel[t] = [cur[0], cur[1], v];
     render();
   }));  $('#q5')?.addEventListener('change', e => { S5.q = e.target.value; render(); });
+  document.querySelectorAll('[data-a7]').forEach(b => b.addEventListener('click', () => act7(b)));
   document.querySelectorAll('[data-kx]').forEach(b => b.addEventListener('click', () => { S7.k = b.dataset.kx; render(); }));
   document.querySelectorAll('[data-a6]').forEach(b => b.addEventListener('click', () => act6(b)));
   $('#q6')?.addEventListener('change', e => { S6.q = e.target.value; render(); });
@@ -1360,7 +1401,7 @@ function mgrSec() {
 function printDoc(pdf) {
   if (!printDoc.t0) printDoc.t0 = document.title;
   const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const who = S.mgr && !S.mgr.all ? mgrLabel().replace(/[·\s]/g, '_') : '부서별', nm = S.page === 'p6' ? '직무교육_운영만족도' : who + '_참석현황';
+  const who = S.mgr && !S.mgr.all ? mgrLabel().replace(/[·\s]/g, '_') : '부서별', nm = S.page === 'p6' ? '직무교육_운영만족도' : S.page === 'p7' ? '부서이동자_특성화교육_참석현황' : who + '_참석현황';
   if (pdf) { let seen = false; try { seen = sessionStorage.getItem('edu_pdf_hint'); sessionStorage.setItem('edu_pdf_hint', '1'); } catch (_) {} if (!seen) alert('인쇄 창이 열리면 「대상(프린터)」을 「PDF로 저장」으로 선택하고 저장하세요.'); }
   document.title = `${nm}_${ymd}`;
   window.addEventListener('afterprint', () => { if (printDoc.t0) { document.title = printDoc.t0; printDoc.t0 = null; } }, {once: true});
