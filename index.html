@@ -17,7 +17,7 @@ body{margin:0}[hidden]{display:none!important}
   --bg:#f3f5f9;--surface:#fff;--sunk:#f4f6fa;--ink:#111827;--ink2:#4b5563;--muted:#6b7280;
   --line:#e6eaf1;--line2:#d5dbe5;--accent:#2563eb;--accent-ink:#fff;--accent-soft:#e8efff;
   --navy:#1f3a68;--navy2:#2a4b85;
-  --c-REG:#2f5d9e;--c-EMG:#5b97c9;--c-TOP:#93c4d6;--c-DED:#3f9d92;--c-SEN:#d9a35c;--c-PTL:#b9694f;--c-MOV:#a7b1bd;--c-SPC:#6f7f94;
+  --c-REG:#2f5d9e;--c-EMG:#5b97c9;--c-TOP:#93c4d6;--c-DED:#3f9d92;--c-SEN:#d9a35c;--c-PTL:#b9694f;--c-MOV:#8a74b8;--c-SPC:#d17a9b;
   --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--good-ink:#006300;--crit-ink:#b42d2d;
   --f-ui:"S-Core Dream","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-num:var(--f-ui);--r:10px;
   color-scheme:light;
@@ -27,7 +27,7 @@ body{margin:0}[hidden]{display:none!important}
     --bg:#0b1220;--surface:#121a2b;--sunk:#0f1626;--ink:#e8edf6;--ink2:#b6c0d1;--muted:#8a96aa;
     --line:#1f2a3f;--line2:#2b3954;--accent:#60a5fa;--accent-ink:#0b1220;--accent-soft:#16264a;
     --navy:#14254a;--navy2:#1d3566;
-    --c-REG:#6f9fe3;--c-EMG:#8fc0e6;--c-TOP:#b4dbe6;--c-DED:#63c2b4;--c-SEN:#e9be85;--c-PTL:#dc9378;--c-MOV:#aab5c2;--c-SPC:#8795aa;
+    --c-REG:#6f9fe3;--c-EMG:#8fc0e6;--c-TOP:#b4dbe6;--c-DED:#63c2b4;--c-SEN:#e9be85;--c-PTL:#dc9378;--c-MOV:#aa97d3;--c-SPC:#e59ab6;
     --good-ink:#5fd35f;--crit-ink:#ee7f7f;color-scheme:dark;
   }
 }
@@ -761,13 +761,13 @@ function p7() {
     <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(real)}<small>명</small></div><div class="sub">중복 제거</div></div>
     <div class="kpi"><div class="lab">참여 부서</div><div class="val">${fmt(deptN)}<small>개</small></div><div class="sub">부서 확인된 참석 기준</div></div>
   </div>
+  <section class="card"><h2>월별 참석 연인원${S7.k === 'all' ? '' : ' · ' + esc(KXN[S7.k])}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S7.k === 'all' ? legend(KX) : ''}${stackChart(months, o, sel, 220, innerWidth <= 820 ? chartW(640) : Math.max(560, ($('#view').clientWidth - 40) || 640))}</section>
+  <section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준</p>
+    <div class="tw"><table><thead><tr><th>월</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${mBody}</tbody><tfoot>${mFoot}</tfoot></table></div></section>
   <section class="card"><div class="tools"><div><h2>부서별 참석현황</h2><p class="hint" style="margin:0">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 2개 교육에 참석하면 2입니다.</p></div>
     <div class="nop" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a7="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 고르세요">PDF 저장</button></div></div>
     <div class="tw" style="margin-top:10px"><table><thead><tr><th>부서</th>${dHead}<th class="tot">합계</th></tr></thead><tbody>${dBody}${dFoot}</tbody></table></div>
     ${dUnkT ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : ''}</section>
-  <section class="card"><h2>월별 참석 연인원${S7.k === 'all' ? '' : ' · ' + esc(KXN[S7.k])}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S7.k === 'all' ? legend(KX) : ''}${stackChart(months, o, sel, 220)}</section>
-  <section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준</p>
-    <div class="tw"><table><thead><tr><th>월</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${mBody}</tbody><tfoot>${mFoot}</tfoot></table></div></section>
   <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준 · 전체 비율</p>
     <div class="mini pos">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">참석 데이터 없음</span>'}</div></section>
   <section class="card"><h2>교육 구분별 직위별 참석 현황</h2><p class="hint">참석 연인원 기준 · 괄호는 해당 교육 구분(세로) 안에서 각 직위가 차지하는 비율${unkPos ? ` · 직위 미확인 ${fmt(unkPos)}건은 표에서 제외` : ''}</p>
