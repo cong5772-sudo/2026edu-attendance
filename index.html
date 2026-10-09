@@ -51,7 +51,7 @@ button{font-size:inherit;color:inherit}
 .refresh{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);cursor:pointer;font-size:16px}.refresh:hover{border-color:var(--accent);color:var(--accent)}.refresh.spin{animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 .pill b{font-weight:500}.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
 /* layout */
-.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;max-width:1560px;margin:0 auto;padding:24px clamp(16px,2vw,28px) 48px}
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;max-width:none;width:100%;margin:0;padding:24px clamp(16px,2vw,28px) 48px}
 .side{position:sticky;top:76px;display:grid;gap:14px;align-content:start;max-height:calc(100vh - 92px);overflow:auto;padding-bottom:4px}
 .navcard{background:linear-gradient(160deg,var(--navy2),var(--navy));border-radius:16px;padding:10px;box-shadow:0 6px 18px rgba(31,58,104,.22)}
 @media (min-width:821px){.navcard{position:sticky;top:0;z-index:5}} /* 조회 조건이 길어 왼쪽 열이 스크롤돼도 페이지 탭은 위에 고정 */
@@ -511,6 +511,8 @@ document.addEventListener('change', e => {
   render();
 });
 function go(p) { if (!(ROLE_PAGES[role()] || []).includes(p)) return; if (location.hash !== '#' + p) location.hash = p; else render(); }
+// 창 크기·화면 배율(확대/축소)이 바뀌면 그래프를 새 폭에 맞춰 다시 그림 → 화면을 가득 채운 채로 비율만 바뀜
+(() => { let w = innerWidth, t = 0; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (innerWidth !== w) { w = innerWidth; if (typeof role === 'function' && role()) render(); } }, 160); }); })();
 window.addEventListener('hashchange', () => { const p = location.hash.slice(1); if (PAGES[p] && (ROLE_PAGES[role()] || []).includes(p)) { S.page = p; render(); window.scrollTo(0, 0); } });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page);
