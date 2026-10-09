@@ -698,6 +698,8 @@ function p2() {
 
 // ---- 부서이동자·부서별 특성화 교육 (직무·관리자교육 페이지와 같은 구성) ----
 const S7 = {k: 'all', busy: false, err: ''};
+// 교육 1건의 참석자 부서별 인원: [[부서, 인원], …] 인원 많은 순
+const courseDepts = c => [...c.dm.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([di, n]) => [di >= 0 ? DEPTS[di] : '부서 미확인', n]);
 async function load7() {
   if (!S5.token || S.rosterAll || S7.busy || S7.err) return;
   S7.busy = true;
@@ -716,7 +718,7 @@ function p7() {
   if (S.rosterAll) {
     const m = new Map();
     S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => {
-      const key = r[0] + '|' + r[1] + '|' + r[2]; const o2 = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0}).get(key); o2.n++;
+      const key = r[0] + '|' + r[1] + '|' + r[2]; const o2 = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0, dm: new Map()}).get(key); o2.n++; o2.dm.set(r[5], (o2.dm.get(r[5]) || 0) + 1);
     });
     courses = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
   }
@@ -736,10 +738,10 @@ function p7() {
   const rt = m => sum(sel, k => o[m]?.[k] || 0);
   const mBody = months.map(m => `<tr><th>${ml(m)}</th>${sel.map(k => { const n = o[m]?.[k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot ${rt(m) ? '' : 'zero'}">${rt(m) ? fmt(rt(m)) : '·'}</td></tr>`).join('');
   const mFoot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(sum(months, m => o[m]?.[k] || 0))}</td>`).join('')}<td class="num tot">${fmt(sum(months, rt))}</td></tr>`;
-  const courseRow = c => `<tr><td class="r">${md(c.d)}</td><td><span class="kc" ${cvar(c.k)}><i></i>${esc(KXN[c.k])}</span></td><td>${esc(c.t)}</td><td class="r num"><b>${fmt(c.n)}</b></td></tr>`;
+  const courseRow = c => `<tr><td class="r">${md(c.d)}</td><td><span class="kc" ${cvar(c.k)}><i></i>${esc(KXN[c.k])}</span></td><td>${esc(c.t)}</td><td class="r num"><b>${fmt(c.n)}</b></td><td style="white-space:normal" title="${esc(courseDepts(c).map(([d, n]) => d + ' ' + n).join(' · '))}">${(() => { const a = courseDepts(c); return esc(a.slice(0, 3).map(([d, n]) => d + ' ' + n).join(' · ')) + (a.length > 3 ? ` <span class="note">외 ${a.length - 3}개</span>` : ''); })()}</td></tr>`;
   const courseSec = courses
     ? `<section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">참석 인원은 교육·사번 중복을 제거한 값입니다 · 시트1에 아직 반영되지 않은 교육은 목록에 나오지 않습니다</p></div></div>
-      <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th></tr></thead><tbody>${courses.map(courseRow).join('') || '<tr><td colspan="4">해당 교육이 없습니다</td></tr>'}</tbody></table></div></section>`
+      <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th><th>참석 부서(인원)</th></tr></thead><tbody>${courses.map(courseRow).join('') || '<tr><td colspan="5">해당 교육이 없습니다</td></tr>'}</tbody></table></div></section>`
     : `<section class="card"><h2>교육 목록</h2><p class="hint">${S5.token ? (S7.err ? esc(S7.err) : '불러오는 중…') : '교육별 목록은 간호교육팀 관리자 로그인에서 볼 수 있습니다.'}</p></section>`;
   return `<div class="phdr"><b>부서이동자·부서별 특성화 교육 참석현황</b> · 조회 조건 ${esc(filterSummary())} · 출력 ${pnow}</div>
   <div class="stack">
@@ -778,10 +780,10 @@ async function act7(el) {
     X.utils.book_append_sheet(wb, ws, '부서별 참석현황');
     if (S.rosterAll) {
       const m = new Map();
-      S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => { const key = r[0] + '|' + r[1] + '|' + r[2]; const o = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0}).get(key); o.n++; });
+      S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => { const key = r[0] + '|' + r[1] + '|' + r[2]; const o = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0, dm: new Map()}).get(key); o.n++; o.dm.set(r[5], (o.dm.get(r[5]) || 0) + 1); });
       const list = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
-      const w2 = X.utils.aoa_to_sheet([['일자', '구분', '교육주제', '참석 인원'], ...list.map(c => [c.d, KXN[c.k], c.t, c.n])]);
-      w2['!cols'] = [{wch: 12}, {wch: 18}, {wch: 50}, {wch: 10}]; X.utils.book_append_sheet(wb, w2, '교육 목록');
+      const w2 = X.utils.aoa_to_sheet([['일자', '구분', '교육주제', '참석 인원', '참석 부서(인원)'], ...list.map(c => [c.d, KXN[c.k], c.t, c.n, courseDepts(c).map(([d, n]) => d + ' ' + n).join(', ')])]);
+      w2['!cols'] = [{wch: 12}, {wch: 18}, {wch: 50}, {wch: 10}, {wch: 50}]; X.utils.book_append_sheet(wb, w2, '교육 목록');
     }
     X.writeFile(wb, ('부서이동자_특성화교육_참석현황_' + filterSummary().split(' · ').slice(0, 2).join('_') + '.xlsx').replace(/[\\/:*?"<>|]/g, ''));
   } catch (e) { alert(e.message || e); }
