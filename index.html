@@ -311,6 +311,7 @@ body.locked{overflow:hidden}
     <nav class="navcard" aria-label="페이지"><div class="navlist">
       <button class="navbtn" data-page="p1"><span class="ic">▤</span>종합 현황</button>
       <button class="navbtn" data-page="p2"><span class="ic">▦</span>직무·관리자교육</button>
+      <button class="navbtn" data-page="p7"><span class="ic">▧</span>부서이동자·특성화 교육</button>
       <button class="navbtn" data-page="p3"><span class="ic">▥</span>부서별 참석현황</button>
       <button class="navbtn" data-page="p6"><span class="ic">★</span>직무교육 운영 만족도</button>
       <button class="navbtn" data-page="p4"><span class="ic">✓</span>데이터 점검</button>
@@ -426,6 +427,7 @@ const PAGES = {
   p2:['직무·관리자교육','직무교육(정기·응급·주제별·전담)과 관리자교육(선임간호사·파트장)을 한 화면에서 구분별로 확인합니다.'],
   p3:['부서별 직무교육 참석현황','병동 순서(14A → … → PAM → 기타)에 맞춰 6개 구분별 참석 인원을 정리했습니다.'],
   p6:['직무교육 운영 만족도','교육 후 설문(5점 만점)의 문항별 평균점수를 교육별·분류별로 확인합니다. 시트2_분류결과의 K~P열 값을 불러옵니다. (간호교육팀 전용)'],
+  p7:['부서이동자·부서별 특성화 교육','부서이동자 교육과 부서별 특성화 교육의 실시와 참석 현황입니다. 직무·관리자교육 페이지와 같은 구성입니다.'],
   p5:['분류 관리','시트에 자동 입력된 교육 중 분류되지 않은 교육을 구분·교육과정명으로 지정합니다. 지정한 내용은 구글시트에 저장되어 다음 집계부터 자동 반영됩니다.'],
   p4:['데이터 점검','교육 분류 결과와 원내교육실시현황과의 차이를 확인합니다. 자동 입력 데이터가 늘어날 때 먼저 살펴볼 페이지입니다.']
 };
@@ -520,7 +522,7 @@ function render() {
   if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && catOK(a.s.k) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
   renderFilters();
   ensurePrev();
-  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5, p6:p6})[S.page]();
+  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5, p6:p6, p7:p7})[S.page]();
   bind();
 }
 // 간호교육팀 관리자: 부서 필터에서 1개 부서를 고르면 그 부서 파트장에게 보이는 참석자 명단을 함께 표시(미리보기)
@@ -691,6 +693,71 @@ function p2() {
   <section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">행을 누르면 부서·직위별 참석을 볼 수 있습니다 · 참석 인원은 교육·사번 중복을 제거한 값입니다</p></div>
     <label class="note"><input type="checkbox" id="plan-tg" ${S.plan ? 'checked' : ''}> 예정 교육 포함</label></div>
     <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th><th>상태</th></tr></thead><tbody>${list.map(row).join('') || '<tr><td colspan="5">해당 교육이 없습니다.</td></tr>'}</tbody></table></div></section></div>`;
+}
+
+// ---- 부서이동자·부서별 특성화 교육 (직무·관리자교육 페이지와 같은 구성) ----
+const S7 = {k: 'all', busy: false, err: ''};
+async function load7() {
+  if (!S5.token || S.rosterAll || S7.busy || S7.err) return;
+  S7.busy = true;
+  try { S.rosterAll = await api5('GET', {action: 'roster', token: S5.token}); } catch (e) { S7.err = String(e.message || e); }
+  S7.busy = false; if (S.page === 'p7') render();
+}
+function p7() {
+  const sel = S7.k === 'all' ? KX : [S7.k];
+  const at = attXF().filter(a => sel.includes(a.k));
+  const rowsU = at.map(a => ({k: a.k, m: a.ym}));
+  const months = rangeMonths(), o = monthDataU(rowsU, sel);
+  const real = new Set(at.filter(a => a.p >= 0).map(a => a.p)).size;
+  const deptN = new Set(at.filter(a => a.di >= 0).map(a => a.di)).size;
+  if (S5.token && !S.rosterAll && !S7.busy && !S7.err) setTimeout(load7, 0);
+  let courses = null;
+  if (S.rosterAll) {
+    const m = new Map();
+    S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => {
+      const key = r[0] + '|' + r[1] + '|' + r[2]; const o2 = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0}).get(key); o2.n++;
+    });
+    courses = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
+  }
+  const chips = KX.map(k => `<button class="chip" data-kx="${k}" aria-pressed="${S7.k === k}" ${cvar(k)}><span class="sw"></span>${KXN[k]}</button>`).join('');
+  const posRows = POS.map((p, i) => ({p, i, n: at.filter(a => a.pi === i).length})).filter(x => x.n);
+  const pmax = Math.max(1, ...posRows.map(x => x.n));
+  const unkPos = at.filter(a => a.pi < 0).length;
+  // 월별 표
+  const mHead = sel.map(k => `<th ${cvar(k)}><span class="cdot"></span>${esc(KXN[k])}</th>`).join('');
+  const rt = m => sum(sel, k => o[m]?.[k] || 0);
+  const mBody = months.map(m => `<tr><th>${ml(m)}</th>${sel.map(k => { const n = o[m]?.[k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot ${rt(m) ? '' : 'zero'}">${rt(m) ? fmt(rt(m)) : '·'}</td></tr>`).join('');
+  const mFoot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(sum(months, m => o[m]?.[k] || 0))}</td>`).join('')}<td class="num tot">${fmt(sum(months, rt))}</td></tr>`;
+  // 직위별 표
+  const cell = POS.map(() => ({})), colT = {};
+  at.forEach(a => { if (a.pi < 0) return; cell[a.pi][a.k] = (cell[a.pi][a.k] || 0) + 1; colT[a.k] = (colT[a.k] || 0) + 1; });
+  const pRows = POS.map((p, i) => ({p, i, t: sum(sel, k => cell[i][k] || 0)})).filter(r => r.t);
+  const pBody = pRows.map(r => `<tr><th>${esc(r.p)}</th>${sel.map(k => { const n = cell[r.i][k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? `${fmt(n)} <span class="note">(${share(n, colT[k])})</span>` : '·'}</td>`; }).join('')}<td class="num tot">${fmt(r.t)}</td></tr>`).join('');
+  const pFoot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(colT[k] || 0)}</td>`).join('')}<td class="num tot">${fmt(sum(sel, k => colT[k] || 0))}</td></tr>`;
+  const courseRow = c => `<tr><td class="r">${md(c.d)}</td><td><span class="kc" ${cvar(c.k)}><i></i>${esc(KXN[c.k])}</span></td><td>${esc(c.t)}</td><td class="r num"><b>${fmt(c.n)}</b></td></tr>`;
+  const courseSec = courses
+    ? `<section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">참석 인원은 교육·사번 중복을 제거한 값입니다 · 시트1에 아직 반영되지 않은 교육은 목록에 나오지 않습니다</p></div></div>
+      <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th></tr></thead><tbody>${courses.map(courseRow).join('') || '<tr><td colspan="4">해당 교육이 없습니다</td></tr>'}</tbody></table></div></section>`
+    : `<section class="card"><h2>교육 목록</h2><p class="hint">${S5.token ? (S7.err ? esc(S7.err) : '불러오는 중…') : '교육별 목록은 간호교육팀 관리자 로그인에서 볼 수 있습니다.'}</p></section>`;
+  return `<div class="stack">
+  <div class="card"><div class="seg">
+    <button class="chip" data-kx="all" aria-pressed="${S7.k === 'all'}">전체</button>${chips}
+  </div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="lab">교육 횟수</div><div class="val">${courses ? fmt(courses.length) : '–'}<small>${courses ? '회' : ''}</small></div><div class="sub">${courses ? '시트1 반영 교육 기준' : '관리자 로그인에서 표시'}</div></div>
+    <div class="kpi"><div class="lab">참석 연인원</div><div class="val">${fmt(at.length)}<small>명</small></div><div class="sub">${courses && courses.length ? `회당 평균 ${(at.length / courses.length).toFixed(1)}명` : '&nbsp;'}</div></div>
+    <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(real)}<small>명</small></div><div class="sub">중복 제거</div></div>
+    <div class="kpi"><div class="lab">참여 부서</div><div class="val">${fmt(deptN)}<small>개</small></div><div class="sub">부서 확인된 참석 기준</div></div>
+  </div>
+  <section class="card"><h2>월별 참석 연인원${S7.k === 'all' ? '' : ' · ' + esc(KXN[S7.k])}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S7.k === 'all' ? legend(KX) : ''}${stackChart(months, o, sel, 220)}</section>
+  <section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준</p>
+    <div class="tw"><table><thead><tr><th>월</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${mBody}</tbody><tfoot>${mFoot}</tfoot></table></div></section>
+  <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준 · 전체 비율</p>
+    <div class="mini pos">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">참석 데이터 없음</span>'}</div></section>
+  <section class="card"><h2>교육 구분별 직위별 참석 현황</h2><p class="hint">참석 연인원 기준 · 괄호는 해당 교육 구분(세로) 안에서 각 직위가 차지하는 비율${unkPos ? ` · 직위 미확인 ${fmt(unkPos)}건은 표에서 제외` : ''}</p>
+    <div class="tw"><table><thead><tr><th>직위</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${pBody || `<tr><td colspan="${sel.length + 2}" class="msg">참석 데이터 없음</td></tr>`}</tbody><tfoot>${pFoot}</tfoot></table></div></section>
+  ${courseSec}
+  </div>`;
 }
 
 // ---- P3 ----
@@ -1116,6 +1183,7 @@ function bind() {
     else S5.sel[t] = [cur[0], cur[1], v];
     render();
   }));  $('#q5')?.addEventListener('change', e => { S5.q = e.target.value; render(); });
+  document.querySelectorAll('[data-kx]').forEach(b => b.addEventListener('click', () => { S7.k = b.dataset.kx; render(); }));
   document.querySelectorAll('[data-a6]').forEach(b => b.addEventListener('click', () => act6(b)));
   $('#q6')?.addEventListener('change', e => { S6.q = e.target.value; render(); });
   $('#hn')?.addEventListener('change', e => { S5.hideNew = e.target.checked; render(); });
@@ -1234,7 +1302,7 @@ const MG = () => S.mgr || S.prev;
 const mgrLabel = () => { const m = MG(); return m.all ? '전체 부서' : m.depts.join('·'); };
 // 접근 구분: admin(간호국·간호교육팀, 비밀번호) / all(전체부서 구글 계정) / mgr(간호단위 파트장, 구글 계정)
 const role = () => S.admin ? 'admin' : S.mgr ? (S.mgr.all ? 'all' : 'mgr') : null;
-const ROLE_PAGES = {admin: ['p1', 'p2', 'p3', 'p6', 'p4', 'p5'], all: ['p1', 'p2', 'p3'], mgr: ['p3']};
+const ROLE_PAGES = {admin: ['p1', 'p2', 'p7', 'p3', 'p6', 'p4', 'p5'], all: ['p1', 'p2', 'p7', 'p3'], mgr: ['p3']};
 const ROLE_LOCKED = {all: ['p6', 'p4', 'p5']}; // 메뉴에는 보이지만 🔒 잠금(간호교육팀 관리자 전용)
 const roleLabel = () => ({admin: '관리자 (간호교육팀)', all: '관리자 (간호국)', mgr: '관리자 (간호단위 파트장)'})[role()] + (S.mgr ? ' · ' + S.mgr.name : '');
 function applyAuth() {
@@ -1253,7 +1321,7 @@ function applyAuth() {
   render(); if (!r) mgrOpen();
 }
 function logout() {
-  S6.data = null; S6.err = ''; S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = ''; S.prev = null; S.rosterAll = null; S.prevErr = null;
+  S6.data = null; S6.err = ''; S7.err = ''; S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = ''; S.prev = null; S.rosterAll = null; S.prevErr = null;
   ['edu_admin', 'edu_mgr'].forEach(k => { try { sessionStorage.removeItem(k); } catch (_) {} });
   try { google.accounts.id.disableAutoSelect(); } catch (_) {}
   applyAuth();
