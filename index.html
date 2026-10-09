@@ -310,6 +310,7 @@ body.locked{overflow:hidden}
       <button class="navbtn" data-page="p1"><span class="ic">▤</span>종합 현황</button>
       <button class="navbtn" data-page="p2"><span class="ic">▦</span>직무·관리자교육</button>
       <button class="navbtn" data-page="p3"><span class="ic">▥</span>부서별 참석현황</button>
+      <button class="navbtn" data-page="p6"><span class="ic">★</span>직무교육 운영 만족도</button>
       <button class="navbtn" data-page="p4"><span class="ic">✓</span>데이터 점검</button>
       <button class="navbtn" data-page="p5"><span class="ic">✎</span>분류 관리</button>
     </div></nav>
@@ -422,6 +423,7 @@ const PAGES = {
   p1:['종합 현황','정기직무교육·응급간호술기·주제별 술기·전담간호사 직무교육·선임간호사 교육·파트장 교육 6개 구분의 교육 실시와 참석 현황입니다.'],
   p2:['직무·관리자교육','직무교육(정기·응급·주제별·전담)과 관리자교육(선임간호사·파트장)을 한 화면에서 구분별로 확인합니다.'],
   p3:['부서별 직무교육 참석현황','병동 순서(14A → … → PAM → 기타)에 맞춰 6개 구분별 참석 인원을 정리했습니다.'],
+  p6:['직무교육 운영 만족도','교육 후 설문(5점 만점)의 문항별 평균점수를 교육별·분류별로 확인합니다. 시트2_분류결과의 K~P열 값을 불러옵니다. (간호교육팀 전용)'],
   p5:['분류 관리','시트에 자동 입력된 교육 중 분류되지 않은 교육을 구분·교육과정명으로 지정합니다. 지정한 내용은 구글시트에 저장되어 다음 집계부터 자동 반영됩니다.'],
   p4:['데이터 점검','교육 분류 결과와 원내교육실시현황과의 차이를 확인합니다. 자동 입력 데이터가 늘어날 때 먼저 살펴볼 페이지입니다.']
 };
@@ -445,7 +447,7 @@ function filterHTML() {
   const monthHas = m => YEARS.some(y => (!S.ys.size || S.ys.has(y)) && has.has(`${y}-${String(m).padStart(2, '0')}`));
   const qOn = q => [1, 2, 3].every(i => S.ms.has((q - 1) * 3 + i));
   const units = (grpIdx() || []).filter(deptAllowed);
-  const hint = S.page === 'p4' ? '<p class="fhint">데이터 점검 페이지는 조회 조건과 무관하게 전체 데이터를 보여줍니다.</p>' : '';
+  const hint = (S.page === 'p4' || S.page === 'p6') ? '<p class="fhint">' + (S.page === 'p6' ? '직무교육 운영 만족도' : '데이터 점검') + ' 페이지는 위 조회 조건과 무관하게 전체 데이터를 보여줍니다.</p>' : '';
   return `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('y', 'all', '전체', !S.ys.size)}${YEARS.map(y => chip('y', y, y + '년', S.ys.has(y))).join('')}</div></div>
     <div class="fs"><span class="fl">분기</span><div class="cg">${chip('q', 'all', '전체', !S.ms.size)}${[1, 2, 3, 4].map(q => chip('q', q, q + '분기', qOn(q))).join('')}</div></div>
     <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({length: 12}, (_, i) => i + 1).map(m => chip('m', m, m + '월', S.ms.has(m), !monthHas(m))).join('')}</div></div>
@@ -516,7 +518,7 @@ function render() {
   if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && catOK(a.s.k) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
   renderFilters();
   ensurePrev();
-  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5})[S.page]();
+  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5, p6:p6})[S.page]();
   bind();
 }
 // 간호교육팀 관리자: 부서 필터에서 1개 부서를 고르면 그 부서 파트장에게 보이는 참석자 명단을 함께 표시(미리보기)
@@ -947,6 +949,82 @@ async function load5() {
   try { S5.data = await api5('GET', {action:'pending', token:S5.token}); } catch (e) { S5.data = null; S5.msg = String(e.message || e); }
   S5.loading = false; render();
 }
+// ---- 직무교육 운영 만족도 (시트2_분류결과 K~P열, 간호교육팀 전용) ----
+const SQ = [
+  ['교육과정평가', '교육은 체계적으로 구성되었는가?'],
+  ['교육운영평가', '교육시설, 환경, 시간은 적절하였는가?'],
+  ['강사평가(교육방법)', '강사는 교육방법이 적절하였으며 교육내용에 대한 전문적인 지식을 가지고 강의하였는가?'],
+  ['강사평가(교육자료)', '강사가 제공한 교육자료(PPT 등)은 교육내용을 전달하기에 적절하였는가?'],
+  ['업무연관성', ''],
+  ['전반적 만족도', '']
+];
+const S6 = {data: null, loading: false, err: '', cat: 'all', year: 'all', q: ''};
+async function load6() {
+  S6.loading = true; S6.err = ''; render();
+  try { S6.data = await api5('GET', {action: 'satisfaction', token: S5.token}); }
+  catch (e) { const m = String(e.message || e); S6.data = null; S6.err = /unknown action/.test(m) ? '서버(Apps Script)에 만족도 기능이 아직 배포되지 않았습니다. 서버 코드 추가·새 버전 배포 후 다시 시도하세요.' : m; }
+  S6.loading = false; render();
+}
+const avg6 = a => { const v = a.filter(x => typeof x === 'number' && isFinite(x)); return v.length ? v.reduce((p, c) => p + c, 0) / v.length : null; };
+const f6 = v => v == null ? '–' : v.toFixed(2);
+const sc6 = v => v == null ? '<td class="num">–</td>' : `<td class="num" style="background:linear-gradient(90deg,rgba(37,99,235,.16) ${Math.max(0, Math.min(100, v / 5 * 100))}%,transparent 0);${v < 4 ? 'color:var(--warn-ink);font-weight:700' : v >= 4.5 ? 'font-weight:700' : ''}">${f6(v)}</td>`;
+function rows6() {
+  const q = S6.q.trim().toLowerCase();
+  return (S6.data.rows || []).filter(r => (S6.cat === 'all' || (r.k || '미분류') === S6.cat) && (S6.year === 'all' || String(r.d).slice(0, 4) === S6.year) && (!q || String(r.t).toLowerCase().includes(q)));
+}
+function p6() {
+  if (!window.EDU_API) return `<div class="callout warn">이 페이지는 구글 시트와 연결된 백엔드(Apps Script)가 있어야 동작합니다.</div>`;
+  if (!S5.token) return `<div class="callout warn">간호교육팀 관리자 로그인이 필요합니다.</div>`;
+  if (!S6.data && !S6.loading && !S6.err) setTimeout(load6, 0);
+  if (S6.err) return `<div class="callout warn">${esc(S6.err)}</div><p style="margin-top:10px"><button class="btn" data-a6="rl">다시 불러오기</button></p>`;
+  if (!S6.data) return `<div class="callout">만족도 데이터를 불러오는 중… (처음에는 30초 정도 걸릴 수 있습니다)</div>`;
+  const all = S6.data.rows || [];
+  const cats = [...new Set(all.map(r => r.k || '미분류'))], years = [...new Set(all.map(r => String(r.d).slice(0, 4)).filter(y => /^\d{4}$/.test(y)))].sort().reverse();
+  const rows = rows6(), chip = (a, v, t, on) => `<button class="chip" data-a6="${a}" data-v="${esc(v)}" aria-pressed="${on}">${esc(t)}</button>`;
+  const tot = avg6(rows.map(r => r.s[5])), n = rows.length, att = rows.reduce((p, r) => p + (+r.n || 0), 0);
+  const byCat = cats.filter(c => S6.cat === 'all' || c === S6.cat).map(c => {
+    const rs = rows.filter(r => (r.k || '미분류') === c); return {c, rs, a: SQ.map((_, i) => avg6(rs.map(r => r.s[i])))};
+  }).filter(x => x.rs.length);
+  const allAvg = SQ.map((_, i) => avg6(rows.map(r => r.s[i])));
+  const catRows = byCat.map(x => `<tr><td>${esc(x.c)}</td><td class="num">${x.rs.length}</td>${x.a.map(sc6).join('')}</tr>`).join('') +
+    `<tr class="tot"><td>전체</td><td class="num">${n}</td>${allAvg.map(sc6).join('')}</tr>`;
+  const list = rows.slice().sort((a, b) => String(b.d).localeCompare(String(a.d)));
+  const unit = t => `<small style="font-size:15px;font-weight:600"> ${t}</small>`;
+  return `<div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="kpi"><div class="lab">설문 실시 교육</div><div class="val">${n}${unit('건')}</div></div>
+      <div class="kpi"><div class="lab">전반적 만족도 평균</div><div class="val">${f6(tot)}${unit('/ 5')}</div></div>
+      <div class="kpi"><div class="lab">대상 교육 참석 인원(합)</div><div class="val">${att.toLocaleString('ko-KR')}${unit('명')}</div></div></div>
+    <section class="card" style="margin-top:14px"><h2>조회</h2>
+      <div class="tools" style="margin:8px 0;flex-wrap:wrap;gap:6px"><span class="fl">분류</span>${chip('cat', 'all', '전체', S6.cat === 'all')}${cats.map(c => chip('cat', c, c, S6.cat === c)).join('')}</div>
+      <div class="tools" style="margin:8px 0;flex-wrap:wrap;gap:6px"><span class="fl">연도</span>${chip('year', 'all', '전체', S6.year === 'all')}${years.map(y => chip('year', y, y + '년', S6.year === y)).join('')}
+        <input type="search" id="q6" placeholder="교육명 검색" value="${esc(S6.q)}" style="flex:1;min-width:160px"><button class="btn" data-a6="xl">엑셀 다운로드</button><button class="btn" data-a6="rl">새로 불러오기</button></div>
+      <p class="note">점수는 교육 1건당 문항별 평균이며 5점 만점입니다. 4점 미만은 주황색으로 표시됩니다. 설문을 실시하지 않았거나 시트에 점수가 없는 교육은 제외됩니다.</p></section>
+    <section class="card" style="margin-top:14px"><h2>분류별 평균</h2>
+      <div class="tw" style="max-height:none"><table><thead><tr><th>분류</th><th>교육 수</th>${SQ.map(q => `<th title="${esc(q[1])}">${esc(q[0])}</th>`).join('')}</tr></thead><tbody>${catRows}</tbody></table></div></section>
+    <section class="card" style="margin-top:14px"><h2>교육별 상세 <span class="tag">${n}건</span></h2>
+      <div class="tw"><table><thead><tr><th>일자</th><th>분류</th><th>교육명</th><th>참석</th>${SQ.map(q => `<th title="${esc(q[1])}">${esc(q[0])}</th>`).join('')}</tr></thead><tbody>${list.map(r => `<tr><td>${esc(r.d)}</td><td>${esc(r.k || '미분류')}</td><td style="white-space:normal">${esc(r.t)}</td><td class="num">${r.n === '' || r.n == null ? '–' : esc(r.n)}</td>${r.s.map(sc6).join('')}</tr>`).join('') || `<tr><td colspan="${4 + SQ.length}" class="msg">조건에 맞는 설문 결과가 없습니다.</td></tr>`}</tbody></table></div></section>
+    <section class="card" style="margin-top:14px"><h2>문항 안내</h2><ul class="hint" style="margin:6px 0 0;padding-left:18px;line-height:1.7">${SQ.map(q => `<li><b>${esc(q[0])}</b>${q[1] ? ' : ' + esc(q[1]) : ''}</li>`).join('')}</ul></section>`;
+}
+async function act6(el) {
+  const a = el.dataset.a6, v = el.dataset.v;
+  if (a === 'cat') S6.cat = v; else if (a === 'year') S6.year = v;
+  else if (a === 'rl') { S6.data = null; await load6(); return; }
+  else if (a === 'xl') {
+    try {
+      const X = await loadXLSX(), wb = X.utils.book_new(), rows = rows6();
+      const cats = [...new Set(rows.map(r => r.k || '미분류'))], r2 = x => x == null ? '' : +x.toFixed(2);
+      const s1 = X.utils.aoa_to_sheet([['분류', '교육 수', ...SQ.map(q => q[0])], ...cats.map(c => { const rs = rows.filter(r => (r.k || '미분류') === c); return [c, rs.length, ...SQ.map((_, i) => r2(avg6(rs.map(r => r.s[i]))))]; }),
+        ['전체', rows.length, ...SQ.map((_, i) => r2(avg6(rows.map(r => r.s[i]))))]]);
+      X.utils.book_append_sheet(wb, s1, '분류별 평균');
+      const s2 = X.utils.aoa_to_sheet([['일자', '분류', '교육명', '참석인원', ...SQ.map(q => q[0])], ...rows.slice().sort((a, b) => String(b.d).localeCompare(String(a.d))).map(r => [r.d, r.k || '미분류', r.t, r.n, ...r.s.map(x => x == null ? '' : x)])]);
+      s2['!cols'] = [{wch: 12}, {wch: 16}, {wch: 50}, {wch: 9}, ...SQ.map(() => ({wch: 14}))];
+      X.utils.book_append_sheet(wb, s2, '교육별 상세');
+      X.writeFile(wb, '직무교육_운영만족도.xlsx');
+    } catch (e) { alert(e.message || e); }
+    return;
+  }
+  render();
+}
 function p5() {
   if (!window.EDU_API) return `<div class="callout warn">분류 관리는 구글 시트와 연결된 백엔드(Apps Script)가 있어야 동작합니다. 연결 전에는 이 화면을 사용할 수 없습니다.</div>`;
   const d = S5.data;
@@ -1034,6 +1112,8 @@ function bind() {
     else S5.sel[t] = [cur[0], cur[1], v];
     render();
   }));  $('#q5')?.addEventListener('change', e => { S5.q = e.target.value; render(); });
+  document.querySelectorAll('[data-a6]').forEach(b => b.addEventListener('click', () => act6(b)));
+  $('#q6')?.addEventListener('change', e => { S6.q = e.target.value; render(); });
   $('#hn')?.addEventListener('change', e => { S5.hideNew = e.target.checked; render(); });
   $('#plan-tg')?.addEventListener('change', e => { S.plan = e.target.checked; render(); });
   $('#dclose')?.addEventListener('click', () => { S.dept = null; render(); });
@@ -1150,8 +1230,8 @@ const MG = () => S.mgr || S.prev;
 const mgrLabel = () => { const m = MG(); return m.all ? '전체 부서' : m.depts.join('·'); };
 // 접근 구분: admin(간호국·간호교육팀, 비밀번호) / all(전체부서 구글 계정) / mgr(간호단위 파트장, 구글 계정)
 const role = () => S.admin ? 'admin' : S.mgr ? (S.mgr.all ? 'all' : 'mgr') : null;
-const ROLE_PAGES = {admin: ['p1', 'p2', 'p3', 'p4', 'p5'], all: ['p1', 'p2', 'p3'], mgr: ['p3']};
-const ROLE_LOCKED = {all: ['p4', 'p5']}; // 메뉴에는 보이지만 🔒 잠금(간호교육팀 관리자 전용)
+const ROLE_PAGES = {admin: ['p1', 'p2', 'p3', 'p6', 'p4', 'p5'], all: ['p1', 'p2', 'p3'], mgr: ['p3']};
+const ROLE_LOCKED = {all: ['p6', 'p4', 'p5']}; // 메뉴에는 보이지만 🔒 잠금(간호교육팀 관리자 전용)
 const roleLabel = () => ({admin: '관리자 (간호교육팀)', all: '관리자 (간호국)', mgr: '관리자 (간호단위 파트장)'})[role()] + (S.mgr ? ' · ' + S.mgr.name : '');
 function applyAuth() {
   const r = role(), ok = ROLE_PAGES[r] || [];
@@ -1169,7 +1249,7 @@ function applyAuth() {
   render(); if (!r) mgrOpen();
 }
 function logout() {
-  S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = ''; S.prev = null; S.rosterAll = null; S.prevErr = null;
+  S6.data = null; S6.err = ''; S.admin = false; S.mgr = null; S5.token = ''; S5.data = null; S.mq = ''; S.prev = null; S.rosterAll = null; S.prevErr = null;
   ['edu_admin', 'edu_mgr'].forEach(k => { try { sessionStorage.removeItem(k); } catch (_) {} });
   try { google.accounts.id.disableAutoSelect(); } catch (_) {}
   applyAuth();
