@@ -450,7 +450,7 @@ function filterHTML() {
   const monthHas = m => YEARS.some(y => (!S.ys.size || S.ys.has(y)) && has.has(`${y}-${String(m).padStart(2, '0')}`));
   const qOn = q => [1, 2, 3].every(i => S.ms.has((q - 1) * 3 + i));
   const units = (grpIdx() || []).filter(deptAllowed);
-  const hint = (S.page === 'p4' || S.page === 'p6') ? '<p class="fhint">' + (S.page === 'p6' ? '직무교육 운영 만족도' : '데이터 점검') + ' 페이지는 위 조회 조건과 무관하게 전체 데이터를 보여줍니다.</p>' : '';
+  const hint = (S.page === 'p4' || S.page === 'p6') ? '<p class="fhint">' + (S.page === 'p6' ? '직무교육 운영 만족도 페이지는 기준일시(연도·분기·월)만 적용됩니다. 교육 종류·부서 조건은 적용되지 않습니다.' : '데이터 점검 페이지는 위 조회 조건과 무관하게 전체 데이터를 보여줍니다.') + '</p>' : '';
   return `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('y', 'all', '전체', !S.ys.size)}${YEARS.map(y => chip('y', y, y + '년', S.ys.has(y))).join('')}</div></div>
     <div class="fs"><span class="fl">분기</span><div class="cg">${chip('q', 'all', '전체', !S.ms.size)}${[1, 2, 3, 4].map(q => chip('q', q, q + '분기', qOn(q))).join('')}</div></div>
     <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({length: 12}, (_, i) => i + 1).map(m => chip('m', m, m + '월', S.ms.has(m), !monthHas(m))).join('')}</div></div>
@@ -973,7 +973,7 @@ const f6 = v => v == null ? '–' : v.toFixed(2);
 const sc6 = v => v == null ? '<td class="num">–</td>' : `<td class="num"${v < 4 ? ' style="color:var(--warn-ink);font-weight:700"' : v >= 4.5 ? ' style="font-weight:700"' : ''}>${f6(v)}</td>`;
 function rows6() {
   const q = S6.q.trim().toLowerCase();
-  return (S6.data.rows || []).filter(r => (S6.cat === 'all' || (r.k || '미분류') === S6.cat) && (S6.year === 'all' || String(r.d).slice(0, 4) === S6.year) && (!q || String(r.t).toLowerCase().includes(q)));
+  return (S6.data.rows || []).filter(r => (S6.cat === 'all' || (r.k || '미분류') === S6.cat) && ymOK(String(r.d).slice(0, 7)) && (!q || String(r.t).toLowerCase().includes(q)));
 }
 function p6() {
   if (!window.EDU_API) return `<div class="callout warn">이 페이지는 구글 시트와 연결된 백엔드(Apps Script)가 있어야 동작합니다.</div>`;
@@ -993,7 +993,7 @@ function p6() {
     `<tr class="tot"><td>전체</td><td class="num">${n}</td>${allAvg.map(sc6).join('')}</tr>`;
   const list = rows.slice().sort((a, b) => String(b.d).localeCompare(String(a.d)));
   const unit = t => `<small style="font-size:15px;font-weight:600"> ${t}</small>`;
-  const ymd = new Date().toISOString().slice(0, 10), flt = `${S6.cat === 'all' ? '전체 분류' : S6.cat} · ${S6.year === 'all' ? '전체 연도' : S6.year + '년'}${S6.q.trim() ? ' · 검색 ' + S6.q.trim() : ''}`;
+  const ymd = new Date().toISOString().slice(0, 10), flt = `${S6.cat === 'all' ? '전체 분류' : S6.cat} · ${filterSummary().split(' · ').slice(0, 2).join(' · ')}${S6.q.trim() ? ' · 검색 ' + S6.q.trim() : ''}`;
   return `<div class="phdr"><b>직무교육 운영 만족도</b> · 조회 조건 ${esc(flt)} · 출력 ${ymd}</div>
     <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="kpi"><div class="lab">설문 실시 교육</div><div class="val">${n}${unit('건')}</div></div>
@@ -1001,7 +1001,7 @@ function p6() {
       <div class="kpi"><div class="lab">대상 교육 참석 인원(합)</div><div class="val">${att.toLocaleString('ko-KR')}${unit('명')}</div></div></div>
     <section class="card nop" style="margin-top:14px"><h2>조회</h2>
       <div class="tools" style="margin:8px 0;flex-wrap:wrap;gap:6px"><span class="fl">분류</span>${chip('cat', 'all', '전체', S6.cat === 'all')}${cats.map(c => chip('cat', c, c, S6.cat === c)).join('')}</div>
-      <div class="tools" style="margin:8px 0;flex-wrap:wrap;gap:6px"><span class="fl">연도</span>${chip('year', 'all', '전체', S6.year === 'all')}${years.map(y => chip('year', y, y + '년', S6.year === y)).join('')}
+      <div class="tools" style="margin:8px 0;flex-wrap:wrap;gap:6px">
         <input type="search" id="q6" placeholder="교육명 검색" value="${esc(S6.q)}" style="flex:1;min-width:160px"><button class="btn pri" data-a6="xl">엑셀 다운로드</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 고르세요">PDF 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-a6="rl">새로 불러오기</button></div>
       <p class="note">점수는 교육 1건당 문항별 평균이며 5점 만점입니다. 4점 미만은 주황색 글씨, 4.5점 이상은 굵은 글씨로 표시됩니다. 설문을 실시하지 않았거나 시트에 점수가 없는 교육은 제외됩니다.</p></section>
     <section class="card" style="margin-top:14px"><h2>분류별 평균</h2>
@@ -1024,7 +1024,7 @@ async function act6(el) {
       const s2 = X.utils.aoa_to_sheet([['일자', '분류', '교육명', '참석인원', ...SQ.map(q => q[0])], ...rows.slice().sort((a, b) => String(b.d).localeCompare(String(a.d))).map(r => [r.d, r.k || '미분류', r.t, r.n, ...r.s.map(x => x == null ? '' : x)])]);
       s2['!cols'] = [{wch: 12}, {wch: 16}, {wch: 50}, {wch: 9}, ...SQ.map(() => ({wch: 14}))];
       X.utils.book_append_sheet(wb, s2, '교육별 상세');
-      X.writeFile(wb, '직무교육_운영만족도.xlsx');
+      X.writeFile(wb, ('직무교육_운영만족도_' + filterSummary().split(' · ').slice(0, 2).join('_') + '.xlsx').replace(/[\/:*?"<>|]/g, ''));
     } catch (e) { alert(e.message || e); }
     return;
   }
