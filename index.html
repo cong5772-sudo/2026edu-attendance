@@ -292,6 +292,9 @@ body.locked{overflow:hidden}
   .rs td.num{padding:3px 4px!important}
 }
 .pnote{display:none}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover{color:var(--accent)}
+th.sortable .sk{margin-left:5px;font-size:10px;color:var(--accent)}th.sortable .sk.off{color:var(--ink3,#9aa3b2);opacity:.6}th.sortable sup{font-size:8px}
+@media print{body.pl7 .stack>*:not(#courses7){display:none!important}body.pl7 th.sortable .sk{display:none}}
 .p6t tbody td,.p6t tbody th,.p6t tr.tot td{background:none!important}
 .p6t tr.tot td{font-weight:700;border-top:1px solid var(--line2)}
 </style>
@@ -700,6 +703,31 @@ function p2() {
 const S7 = {k: 'all', busy: false, err: ''};
 // 교육 1건의 참석자 부서별 인원: [[부서, 인원], …] 인원 많은 순
 const courseDepts = c => [...c.dm.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([di, n]) => [di >= 0 ? DEPTS[di] : '부서 미확인', n]);
+S7.sort = [];
+const SORTF = {d: c => c.d, k: c => KXN[c.k], t: c => c.t, n: c => c.n, p: c => courseDepts(c).map(x => x[0]).join(',')};
+function courses7(sel) {
+  if (!S.rosterAll) return null;
+  const m = new Map();
+  S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => {
+    const key = r[0] + '|' + r[1] + '|' + r[2]; const o = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0, dm: new Map()}).get(key); o.n++; o.dm.set(r[5], (o.dm.get(r[5]) || 0) + 1);
+  });
+  const keys = S7.sort.length ? S7.sort : [{c: 'd', dir: 1}];
+  return [...m.values()].sort((a, b) => {
+    for (const k of keys) { const x = SORTF[k.c](a), y = SORTF[k.c](b), r = typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'ko'); if (r) return r * k.dir; }
+    return a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko');
+  });
+}
+function sortTh(c, label) {
+  const i = S7.sort.findIndex(k => k.c === c), k = S7.sort[i];
+  const mark = k ? `<span class="sk">${k.dir > 0 ? '▲' : '▼'}${S7.sort.length > 1 ? `<sup>${i + 1}</sup>` : ''}</span>` : '<span class="sk off">⇅</span>';
+  return `<th class="sortable" data-sort="${c}" title="누르면 정렬합니다 (Shift+클릭: 추가 기준)">${label}${mark}</th>`;
+}
+function toggleSort7(c, multi) {
+  const i = S7.sort.findIndex(k => k.c === c);
+  if (multi) { if (i >= 0) S7.sort[i].dir *= -1; else S7.sort.push({c, dir: 1}); }
+  else if (S7.sort.length === 1 && i === 0) S7.sort[0].dir *= -1;
+  else S7.sort = [{c, dir: 1}];
+}
 async function load7() {
   if (!S5.token || S.rosterAll || S7.busy || S7.err) return;
   S7.busy = true;
@@ -714,14 +742,7 @@ function p7() {
   const real = new Set(at.filter(a => a.p >= 0).map(a => a.p)).size;
   const deptN = new Set(at.filter(a => a.di >= 0).map(a => a.di)).size;
   if (S5.token && !S.rosterAll && !S7.busy && !S7.err) setTimeout(load7, 0);
-  let courses = null;
-  if (S.rosterAll) {
-    const m = new Map();
-    S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => {
-      const key = r[0] + '|' + r[1] + '|' + r[2]; const o2 = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0, dm: new Map()}).get(key); o2.n++; o2.dm.set(r[5], (o2.dm.get(r[5]) || 0) + 1);
-    });
-    courses = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
-  }
+  const courses = courses7(sel);
   // 부서별 참석현황(부서 × 구분) — 부서별 참석현황 페이지와 같은 표
   const dm = DEPTS.map(() => ({})), dUnk = {}; let dUnkT = 0;
   at.forEach(a => { if (a.di < 0) { dUnk[a.k] = (dUnk[a.k] || 0) + 1; dUnkT++; return; } dm[a.di][a.k] = (dm[a.di][a.k] || 0) + 1; });
@@ -740,8 +761,9 @@ function p7() {
   const mFoot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(sum(months, m => o[m]?.[k] || 0))}</td>`).join('')}<td class="num tot">${fmt(sum(months, rt))}</td></tr>`;
   const courseRow = c => `<tr><td class="r">${md(c.d)}</td><td><span class="kc" ${cvar(c.k)}><i></i>${esc(KXN[c.k])}</span></td><td>${esc(c.t)}</td><td class="r num"><b>${fmt(c.n)}</b></td><td style="white-space:normal" title="${esc(courseDepts(c).map(([d, n]) => d + ' ' + n).join(' · '))}">${(() => { const a = courseDepts(c); return esc(a.slice(0, 3).map(([d, n]) => d + ' ' + n).join(' · ')) + (a.length > 3 ? ` <span class="note">외 ${a.length - 3}개</span>` : ''); })()}</td></tr>`;
   const courseSec = courses
-    ? `<section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">참석 인원은 교육·사번 중복을 제거한 값입니다 · 시트1에 아직 반영되지 않은 교육은 목록에 나오지 않습니다</p></div></div>
-      <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>일자</th><th>구분</th><th>교육주제</th><th>참석 인원</th><th>참석 부서(인원)</th></tr></thead><tbody>${courses.map(courseRow).join('') || '<tr><td colspan="5">해당 교육이 없습니다</td></tr>'}</tbody></table></div></section>`
+    ? `<section class="card" id="courses7"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">참석 인원은 교육·사번 중복을 제거한 값입니다 · 시트1에 아직 반영되지 않은 교육은 목록에 나오지 않습니다 · 제목 칸을 누르면 정렬됩니다(Shift+클릭: 추가 기준)</p></div>
+      <div class="nop" style="display:flex;gap:8px;flex-wrap:wrap">${S7.sort.length ? '<button class="btn" data-a7="sortreset">정렬 초기화</button>' : ''}<button class="btn" data-a7="xlc">엑셀 저장</button><button class="btn" data-a7="prc">인쇄</button><button class="btn" data-a7="pdfc" title="인쇄 창에서 대상을 'PDF로 저장'으로 고르세요">PDF 저장</button></div></div>
+      <div class="tw tl" style="margin-top:10px"><table><thead><tr>${sortTh('d', '일자')}${sortTh('k', '구분')}${sortTh('t', '교육주제')}${sortTh('n', '참석 인원')}${sortTh('p', '참석 부서(인원)')}</tr></thead><tbody>${courses.map(courseRow).join('') || '<tr><td colspan="5">해당 교육이 없습니다</td></tr>'}</tbody></table></div></section>`
     : `<section class="card"><h2>교육 목록</h2><p class="hint">${S5.token ? (S7.err ? esc(S7.err) : '불러오는 중…') : '교육별 목록은 간호교육팀 관리자 로그인에서 볼 수 있습니다.'}</p></section>`;
   return `<div class="phdr"><b>부서이동자·부서별 특성화 교육 참석현황</b> · 조회 조건 ${esc(filterSummary())} · 출력 ${pnow}</div>
   <div class="stack">
@@ -768,7 +790,24 @@ function p7() {
 }
 
 async function act7(el) {
-  if (el.dataset.a7 !== 'xl') return;
+  const a7 = el.dataset.a7;
+  if (a7 === 'sortreset') { S7.sort = []; render(); return; }
+  if (a7 === 'prc' || a7 === 'pdfc') {
+    document.body.classList.add('pl7');
+    window.addEventListener('afterprint', () => document.body.classList.remove('pl7'), {once: true});
+    printDoc(a7 === 'pdfc'); return;
+  }
+  if (a7 === 'xlc') {
+    try {
+      const list = courses7(S7.k === 'all' ? KX : [S7.k]); if (!list || !list.length) { alert('내보낼 교육 목록이 없습니다.'); return; }
+      const X = await loadXLSX(), wb = X.utils.book_new();
+      const ws = X.utils.aoa_to_sheet([[`부서이동자·부서별 특성화 교육 목록 · ${filterSummary()}`], [], ['일자', '구분', '교육주제', '참석 인원', '참석 부서(인원)'], ...list.map(c => [c.d, KXN[c.k], c.t, c.n, courseDepts(c).map(([d, n]) => d + ' ' + n).join(', ')])]);
+      ws['!cols'] = [{wch: 12}, {wch: 18}, {wch: 50}, {wch: 10}, {wch: 50}]; X.utils.book_append_sheet(wb, ws, '교육 목록');
+      X.writeFile(wb, ('부서이동자_특성화교육_목록_' + filterSummary().split(' · ').slice(0, 2).join('_') + '.xlsx').replace(/[\\/:*?"<>|]/g, ''));
+    } catch (e) { alert(e.message || e); }
+    return;
+  }
+  if (a7 !== 'xl') return;
   try {
     const sel = S7.k === 'all' ? KX : [S7.k], at = attXF().filter(a => sel.includes(a.k));
     const dm = DEPTS.map(() => ({})), dUnk = {};
@@ -780,10 +819,8 @@ async function act7(el) {
     const ws = X.utils.aoa_to_sheet([[`부서이동자·부서별 특성화 교육 참석현황 · ${filterSummary()}`], [], ['부서', ...sel.map(k => KXN[k]), '합계'], ...rows]);
     ws['!cols'] = [{wch: 16}, ...sel.map(() => ({wch: 20})), {wch: 10}];
     X.utils.book_append_sheet(wb, ws, '부서별 참석현황');
-    if (S.rosterAll) {
-      const m = new Map();
-      S.rosterAll.rows.filter(r => sel.includes(r[0]) && ymOK(r[7]) && catOK(r[0]) && deptSel(r[5])).forEach(r => { const key = r[0] + '|' + r[1] + '|' + r[2]; const o = m.get(key) || m.set(key, {k: r[0], t: r[1], d: r[2], n: 0, dm: new Map()}).get(key); o.n++; o.dm.set(r[5], (o.dm.get(r[5]) || 0) + 1); });
-      const list = [...m.values()].sort((a, b) => a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko'));
+    const list = courses7(sel);
+    if (list) {
       const w2 = X.utils.aoa_to_sheet([['일자', '구분', '교육주제', '참석 인원', '참석 부서(인원)'], ...list.map(c => [c.d, KXN[c.k], c.t, c.n, courseDepts(c).map(([d, n]) => d + ' ' + n).join(', ')])]);
       w2['!cols'] = [{wch: 12}, {wch: 18}, {wch: 50}, {wch: 10}, {wch: 50}]; X.utils.book_append_sheet(wb, w2, '교육 목록');
     }
@@ -1214,6 +1251,7 @@ function bind() {
     else S5.sel[t] = [cur[0], cur[1], v];
     render();
   }));  $('#q5')?.addEventListener('change', e => { S5.q = e.target.value; render(); });
+  document.querySelectorAll('[data-sort]').forEach(th => th.addEventListener('click', e => { toggleSort7(th.dataset.sort, e.shiftKey); render(); }));
   document.querySelectorAll('[data-a7]').forEach(b => b.addEventListener('click', () => act7(b)));
   document.querySelectorAll('[data-kx]').forEach(b => b.addEventListener('click', () => { S7.k = b.dataset.kx; render(); }));
   document.querySelectorAll('[data-a6]').forEach(b => b.addEventListener('click', () => act6(b)));
