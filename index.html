@@ -1402,10 +1402,11 @@ function prOnly(keepSet) {
   walk($('#view')); return off;
 }
 function prRun(keepSet, title, landscape) {
-  const hdr = prHeader(title), off = prOnly(keepSet);
+  const hdr = prHeader(title), off = prOnly(keepSet), undos = [];
+  keepSet.forEach(el => outerTables(el).forEach((t, ti) => { const h = COLSEL[colKey(el, ti)]; if (h && h.size) undos.push(colHide(t, h)); }));
   let st = null; if (landscape) { st = document.createElement('style'); st.textContent = '@page{size:A4 landscape;margin:12mm}'; document.head.appendChild(st); }
   const t0 = document.title; document.title = `${prSafe(title)}_${prYmd()}`;
-  const done = () => { off.forEach(e => e.classList.remove('pr-off')); hdr && hdr.remove(); st && st.remove(); document.title = t0; window.removeEventListener('afterprint', done); };
+  const done = () => { undos.forEach(f => f()); off.forEach(e => e.classList.remove('pr-off')); hdr && hdr.remove(); st && st.remove(); document.title = t0; window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done); window.print();
 }
 // 페이지 인쇄: 범위(블록) 선택 창
@@ -1439,7 +1440,7 @@ function decorateCards() {
   prSections().forEach((el, i) => {
     if (el.matches('.kpis')) return;
     const tables = [...el.querySelectorAll('table')].filter(t => !t.parentElement.closest('table')), svgs = el.querySelectorAll('svg.chart');
-    const btns = `<button class="ctb" data-ct="print" title="이 블록만 인쇄 / PDF 저장">인쇄</button>${tables.length ? '<button class="ctb" data-ct="xls" title="이 블록의 표를 엑셀로 저장">엑셀</button>' : ''}${svgs.length ? '<button class="ctb" data-ct="png" title="이 블록의 그래프를 이미지(PNG)로 저장">이미지</button>' : ''}`;
+    const btns = `<button class="ctb" data-ct="print" title="이 블록만 인쇄 / PDF 저장">인쇄</button>${tables.length ? `<button class="ctb" data-ct="cols" title="인쇄·엑셀 저장에 포함할 열을 고릅니다">열 선택${colHiddenCount(el) ? ' · 변경됨' : ''}</button><button class="ctb" data-ct="xls" title="이 블록의 표를 엑셀로 저장">엑셀</button>` : ''}${svgs.length ? '<button class="ctb" data-ct="png" title="이 블록의 그래프를 이미지(PNG)로 저장">이미지</button>' : ''}`;
     const wrap = document.createElement('span'); wrap.className = 'ct nop'; wrap.innerHTML = btns; wrap.dataset.i = i;
     const h = el.querySelector('h2, .sech');
     if (h && !h.closest('table')) h.appendChild(wrap);
@@ -1450,7 +1451,7 @@ function ctTarget(btn) { const i = +btn.closest('.ct').dataset.i; return prSecti
 async function ctXls(el) {
   const tables = [...el.querySelectorAll('table')].filter(t => !t.parentElement.closest('table'));
   const X = await loadXLSX(), wb = X.utils.book_new(), nm = prLabel(el, 0);
-  tables.forEach((t, k) => { const ws = X.utils.table_to_sheet(t); X.utils.book_append_sheet(wb, ws, prSafe(`${nm}${tables.length > 1 ? k + 1 : ''}`).slice(0, 28) || `표${k + 1}`); });
+  tables.forEach((t, k) => { const cl = t.cloneNode(true); colHide(cl, COLSEL[colKey(el, k)]); cl.querySelectorAll('th, td').forEach(c => { if (c.style.display === 'none') c.remove(); }); const ws = X.utils.table_to_sheet(cl); X.utils.book_append_sheet(wb, ws, prSafe(`${nm}${tables.length > 1 ? k + 1 : ''}`).slice(0, 28) || `표${k + 1}`); });
   X.writeFile(wb, `${prSafe(PAGES[S.page][0])}_${prSafe(nm)}_${prYmd()}.xlsx`);
 }
 function ctPng(el) {
@@ -1468,12 +1469,63 @@ function ctPng(el) {
     img.onerror = () => alert('이미지를 만들지 못했습니다.'); img.src = url;
   });
 }
+// ---- 표 열(컬럼) 선택: 인쇄·엑셀 저장에만 적용(화면은 그대로) ----
+const COLSEL = {}; // 키(페이지|블록|표번호) → 숨길 열 번호 집합
+const outerTables = el => [...el.querySelectorAll('table')].filter(t => !t.parentElement.closest('table'));
+const colKey = (el, ti) => `${S.page}|${prLabel(el, 0)}|${ti}`;
+function tblCols(t) {
+  const hr = t.querySelector('thead tr:last-child') || t.querySelector('tr'); let col = 0; const out = [];
+  if (!hr) return out;
+  [...hr.children].forEach(c => {
+    const span = c.colSpan || 1, cl = c.cloneNode(true); cl.querySelectorAll('.sk, .cdot, .ct').forEach(x => x.remove());
+    const lab = cl.textContent.replace(/\s+/g, ' ').trim() || `열 ${col + 1}`;
+    for (let k = 0; k < span; k++) out.push({i: col + k, label: span > 1 ? `${lab} (${k + 1})` : lab});
+    col += span;
+  });
+  return out;
+}
+function colHide(t, hidden) { // 숨김 적용(셀 감추기·colspan 조정) → 되돌리는 함수
+  if (!hidden || !hidden.size) return () => {};
+  const undo = [];
+  t.querySelectorAll('tr').forEach(tr => {
+    let col = 0;
+    [...tr.children].forEach(c => {
+      const span = c.colSpan || 1; let vis = 0; for (let k = 0; k < span; k++) if (!hidden.has(col + k)) vis++;
+      if (vis === 0) { const d = c.style.display; c.style.display = 'none'; undo.push(() => { c.style.display = d; }); }
+      else if (vis < span) { const o = c.colSpan; c.colSpan = vis; undo.push(() => { c.colSpan = o; }); }
+      col += span;
+    });
+  });
+  return () => undo.forEach(f => f());
+}
+const colHiddenCount = el => outerTables(el).reduce((n, t, ti) => n + ((COLSEL[colKey(el, ti)] || new Set()).size), 0);
+function openColDlg(el) {
+  const tables = outerTables(el); if (!tables.length) return;
+  let dlg = $('#coldlg'); if (!dlg) { dlg = document.createElement('dialog'); dlg.id = 'coldlg'; document.body.appendChild(dlg); }
+  const all = tables.map((t, ti) => ({ti, cols: tblCols(t)}));
+  dlg.innerHTML = `<div class="dh"><div><h3>열 선택</h3><p>${esc(prLabel(el, 0))} · 인쇄·엑셀 저장에 포함할 열을 고르세요(화면에는 영향 없음)</p></div><button class="x" data-cd="close" aria-label="닫기">×</button></div>
+    <div class="db"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-cd="all">전체 선택</button><button class="btn" data-cd="none">전체 해제</button></div>
+    ${all.map(a => `<div>${all.length > 1 ? `<div class="fl" style="margin-bottom:4px">표 ${a.ti + 1}</div>` : ''}<div class="prl">${a.cols.map(c => `<label class="mso"><input type="checkbox" data-cdt="${a.ti}" data-cdi="${c.i}" ${(COLSEL[colKey(el, a.ti)] || new Set()).has(c.i) ? '' : 'checked'}><span>${esc(c.label)}</span></label>`).join('')}</div></div>`).join('')}
+    <p class="note">첫 번째 열(부서·월 등 구분 열)은 빼면 표를 읽기 어려워집니다. 한 열은 반드시 남겨야 합니다.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn pri" data-cd="close">적용</button></div></div>`;
+  const sync = () => {
+    all.forEach(a => { const set = new Set(); dlg.querySelectorAll(`[data-cdt="${a.ti}"]`).forEach(c => { if (!c.checked) set.add(+c.dataset.cdi); }); if (set.size >= a.cols.length) { set.clear(); a.cols.slice(1).forEach(c => set.add(c.i)); dlg.querySelectorAll(`[data-cdt="${a.ti}"]`)[0].checked = true; } COLSEL[colKey(el, a.ti)] = set; });
+  };
+  dlg.onchange = sync;
+  dlg.onclick = e => {
+    const b = e.target.closest('[data-cd]'); if (!b) return; const a = b.dataset.cd;
+    if (a === 'all' || a === 'none') { dlg.querySelectorAll('[data-cdi]').forEach(c => c.checked = a === 'all'); sync(); }
+    else if (a === 'close') { sync(); dlg.close(); decorateCards(); }
+  };
+  dlg.showModal();
+}
 document.addEventListener('click', e => {
   const b = e.target.closest('.ctb'); if (!b) return; e.stopPropagation();
   const el = ctTarget(b), a = b.dataset.ct; if (!el) return;
   if (a === 'print') prRun(new Set([el]), `${PAGES[S.page][0]} · ${prLabel(el, 0)}`, false);
   else if (a === 'xls') ctXls(el).catch(err => alert(err.message || err));
   else if (a === 'png') ctPng(el);
+  else if (a === 'cols') openColDlg(el);
 }, true);
 document.getElementById('pgprint')?.addEventListener('click', openPagePrint);
 function p5() {
