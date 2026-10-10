@@ -1124,7 +1124,7 @@ const SQ = [
   ['업무연관성', ''],
   ['전반적 만족도', '']
 ];
-const S6 = {data: null, loading: false, err: '', cat: 'all', year: 'all', q: ''};
+const S6 = {data: null, loading: false, err: '', cat: 'all', year: 'all', q: '', gt: 'line'};
 async function load6() {
   S6.loading = true; S6.err = ''; render();
   try { S6.data = S5.token ? await api5('GET', {action: 'satisfaction', token: S5.token}) : await api5('POST', {}, {action: 'satisfaction', idToken: S.mgr && S.mgr.cred}); }
@@ -1141,21 +1141,30 @@ function rows6() {
 // 분류별 평균 그래프: 문항(가로)별로 분류마다 막대를 나란히 — 점수 차이가 보이도록 세로축은 3점부터(필요하면 더 낮게)
 const FALLBACK6 = ['#2f5d9e', '#d9a35c', '#3f9d92', '#b9694f', '#8a74b8', '#d17a9b', '#5b97c9', '#7f8c5a'];
 function chart6(series, W) {
-  const H = 280, L = 40, R = 10, T = 26, B = 58, nS = series.length, nG = SQ.length;
+  const H = 290, L = 40, R = 10, T = 26, B = 58, nS = series.length, nG = SQ.length;
   if (!nS) return '';
   const all = series.flatMap(x => x.a).filter(v => v != null);
-  const lo = all.length ? Math.min(3, Math.floor(Math.min(...all))) : 3, hi = 5, rng = hi - lo;
+  const lo = all.length ? Math.min(4, Math.floor(Math.min(...all))) : 4, hi = 5, rng = hi - lo, step = rng <= 1 ? 0.2 : 0.5;
   const gw = (W - L - R) / nG, bw = Math.max(5, Math.min(26, (gw * 0.8) / nS)), inner = bw * nS;
   const y = v => T + (H - T - B) * (1 - (Math.max(lo, Math.min(hi, v)) - lo) / rng);
+  const line = S6.gt !== 'bar';
   let g = '';
-  for (let v = lo; v <= hi + 1e-9; v += 0.5) { const yy = y(v); g += `<line class="grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${v % 1 ? v.toFixed(1) : v}</text>`; }
+  for (let v = lo; v <= hi + 1e-9; v += step) { const yy = y(v); g += `<line class="grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${v.toFixed(1)}</text>`; }
+  if (line) {
+    series.forEach(sr => {
+      const pts = sr.a.map((v, gi) => v == null ? null : [L + gi * gw + gw / 2, y(v), v, gi]).filter(Boolean), dash = sr.c === '전체' ? ' stroke-dasharray="6 4"' : '';
+      if (pts.length > 1) g += `<polyline fill="none" stroke="${sr.color}" stroke-width="2.4"${dash} stroke-linejoin="round" points="${pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}"/>`;
+      pts.forEach(q => { g += `<circle class="bar" cx="${q[0]}" cy="${q[1]}" r="4.5" fill="var(--surface)" stroke="${sr.color}" stroke-width="2.4" data-tip="${esc(SQ[q[3]][0])} · ${esc(sr.c)}: ${q[2].toFixed(2)}점"/>`; });
+    });
+    if (nS <= 4) series.forEach((sr, si) => sr.a.forEach((v, gi) => { if (v != null) g += `<text class="tot" x="${L + gi * gw + gw / 2}" y="${si % 2 ? y(v) + 17 : y(v) - 9}" text-anchor="middle" style="font-size:10px;fill:${sr.color}">${v.toFixed(2)}</text>`; }));
+  }
   SQ.forEach((q, gi) => {
     const x0 = L + gi * gw + (gw - inner) / 2;
-    series.forEach((sr, si) => {
+    if (!line) series.forEach((sr, si) => {
       const v = sr.a[gi]; if (v == null) return;
       const x = x0 + si * bw, yy = y(v), h = H - B - yy;
       g += `<rect class="bar" x="${x}" y="${yy}" width="${bw - 1.5}" height="${Math.max(1, h)}" fill="${sr.color}" data-tip="${esc(q[0])} · ${esc(sr.c)}: ${v.toFixed(2)}점" rx="2"/>`;
-      if (bw >= 15) g += `<text class="tot" x="${x + (bw - 1.5) / 2}" y="${yy - 4}" text-anchor="middle" style="font-size:10px">${v.toFixed(1)}</text>`;
+      if (bw >= 22) g += `<text class="tot" x="${x + (bw - 1.5) / 2}" y="${yy - 4}" text-anchor="middle" style="font-size:9px">${v.toFixed(2)}</text>`;
     });
     const lab = q[0].replace('강사평가', '강사').split('(');
     g += `<text x="${L + gi * gw + gw / 2}" y="${H - B + 18}" text-anchor="middle">${esc(lab[0])}</text>` + (lab[1] ? `<text x="${L + gi * gw + gw / 2}" y="${H - B + 33}" text-anchor="middle">(${esc(lab[1])}</text>` : '');
@@ -1195,7 +1204,7 @@ function p6() {
       <p class="note">점수는 교육 1건당 문항별 평균이며 5점 만점입니다. 4점 미만은 주황색 글씨, 4.5점 이상은 굵은 글씨로 표시됩니다. 설문을 실시하지 않았거나 시트에 점수가 없는 교육은 제외됩니다.</p></section>
     <section class="card" style="margin-top:14px"><h2>분류별 평균</h2>
       <div class="tw" style="max-height:none"><table class="p6t"><thead><tr><th>분류</th><th>교육 수</th>${SQ.map(q => `<th title="${esc(q[1])}">${esc(q[0])}</th>`).join('')}</tr></thead><tbody>${catRows}</tbody></table></div></section>
-    <section class="card" style="margin-top:14px"><h2>분류별 평균 그래프</h2><p class="hint">문항별로 분류마다 막대를 나란히 비교합니다 · 세로축은 ${esc(String(Math.min(3, Math.floor(Math.min(...chartSeries.flatMap(x => x.a).filter(v => v != null), 3)))))}점부터 5점까지입니다(차이가 잘 보이도록 아래쪽을 잘라 냈습니다) · 막대에 마우스를 올리면 값이 표시됩니다</p>
+    <section class="card" style="margin-top:14px"><div class="tools" style="justify-content:space-between"><h2 style="margin:0">분류별 평균 그래프</h2><div class="tg" role="group" aria-label="그래프 종류"><button data-a6="gt" data-v="line" aria-pressed="${S6.gt !== 'bar'}">꺾은선</button><button data-a6="gt" data-v="bar" aria-pressed="${S6.gt === 'bar'}">막대</button></div></div><p class="hint">문항별로 분류마다 ${S6.gt === 'bar' ? '막대를 나란히' : '점을 이은 선으로'} 비교합니다 · 세로축은 ${esc(String(Math.min(4, Math.floor(Math.min(...chartSeries.flatMap(x => x.a).filter(v => v != null), 4)))))}점부터 5점까지입니다(미세한 차이가 보이도록 범위를 좁혔고, 4점 미만 값이 있으면 자동으로 넓어집니다) · 점·막대에 마우스를 올리면 값이 표시됩니다</p>
       <div class="legend">${chartSeries.map(x => `<span><i style="background:${x.color}"></i>${esc(x.c)}</span>`).join('')}</div>
       ${chart6(chartSeries, innerWidth <= 820 ? chartW(640) : Math.max(560, ($('#view').clientWidth - 40) || 640))}</section>
     <section class="card" style="margin-top:14px"><h2>교육별 상세 <span class="tag">${n}건</span></h2>
@@ -1204,7 +1213,7 @@ function p6() {
 }
 async function act6(el) {
   const a = el.dataset.a6, v = el.dataset.v;
-  if (a === 'cat') S6.cat = v; else if (a === 'year') S6.year = v;
+  if (a === 'cat') S6.cat = v; else if (a === 'year') S6.year = v; else if (a === 'gt') S6.gt = v;
   else if (a === 'rl') { S6.data = null; await load6(); return; }
   else if (a === 'xl') {
     try {
