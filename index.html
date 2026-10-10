@@ -1138,6 +1138,30 @@ function rows6() {
   const q = S6.q.trim().toLowerCase();
   return (S6.data.rows || []).filter(r => (S6.cat === 'all' || (r.k || '미분류') === S6.cat) && ymOK(String(r.d).slice(0, 7)) && (!q || String(r.t).toLowerCase().includes(q)));
 }
+// 분류별 평균 그래프: 문항(가로)별로 분류마다 막대를 나란히 — 점수 차이가 보이도록 세로축은 3점부터(필요하면 더 낮게)
+const FALLBACK6 = ['#2f5d9e', '#d9a35c', '#3f9d92', '#b9694f', '#8a74b8', '#d17a9b', '#5b97c9', '#7f8c5a'];
+function chart6(series, W) {
+  const H = 280, L = 40, R = 10, T = 26, B = 58, nS = series.length, nG = SQ.length;
+  if (!nS) return '';
+  const all = series.flatMap(x => x.a).filter(v => v != null);
+  const lo = all.length ? Math.min(3, Math.floor(Math.min(...all))) : 3, hi = 5, rng = hi - lo;
+  const gw = (W - L - R) / nG, bw = Math.max(5, Math.min(26, (gw * 0.8) / nS)), inner = bw * nS;
+  const y = v => T + (H - T - B) * (1 - (Math.max(lo, Math.min(hi, v)) - lo) / rng);
+  let g = '';
+  for (let v = lo; v <= hi + 1e-9; v += 0.5) { const yy = y(v); g += `<line class="grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${v % 1 ? v.toFixed(1) : v}</text>`; }
+  SQ.forEach((q, gi) => {
+    const x0 = L + gi * gw + (gw - inner) / 2;
+    series.forEach((sr, si) => {
+      const v = sr.a[gi]; if (v == null) return;
+      const x = x0 + si * bw, yy = y(v), h = H - B - yy;
+      g += `<rect class="bar" x="${x}" y="${yy}" width="${bw - 1.5}" height="${Math.max(1, h)}" fill="${sr.color}" data-tip="${esc(q[0])} · ${esc(sr.c)}: ${v.toFixed(2)}점" rx="2"/>`;
+      if (bw >= 15) g += `<text class="tot" x="${x + (bw - 1.5) / 2}" y="${yy - 4}" text-anchor="middle" style="font-size:10px">${v.toFixed(1)}</text>`;
+    });
+    const lab = q[0].replace('강사평가', '강사').split('(');
+    g += `<text x="${L + gi * gw + gw / 2}" y="${H - B + 18}" text-anchor="middle">${esc(lab[0])}</text>` + (lab[1] ? `<text x="${L + gi * gw + gw / 2}" y="${H - B + 33}" text-anchor="middle">(${esc(lab[1])}</text>` : '');
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="분류별 문항 평균 점수 그래프">${g}</svg>`;
+}
 function p6() {
   if (!window.EDU_API) return `<div class="callout warn">이 페이지는 구글 시트와 연결된 백엔드(Apps Script)가 있어야 동작합니다.</div>`;
   if (!S5.token && !(S.mgr && S.mgr.cred)) return `<div class="callout warn">간호교육팀·간호국 로그인이 필요합니다.</div>`;
@@ -1154,6 +1178,8 @@ function p6() {
   const allAvg = SQ.map((_, i) => avg6(rows.map(r => r.s[i])));
   const catRows = byCat.map(x => `<tr><td>${esc(x.c)}</td><td class="num">${x.rs.length}</td>${x.a.map(sc6).join('')}</tr>`).join('') +
     `<tr class="tot"><td>전체</td><td class="num">${n}</td>${allAvg.map(sc6).join('')}</tr>`;
+  const nameKey = {}; Object.entries({...KN, ...(typeof KXN === 'object' ? KXN : {})}).forEach(([k, v]) => { nameKey[v] = k; });
+  const chartSeries = [...byCat.map((x, i) => ({c: x.c, a: x.a, color: nameKey[x.c] ? `var(--c-${nameKey[x.c]})` : FALLBACK6[i % FALLBACK6.length]})), ...(byCat.length > 1 ? [{c: '전체', a: allAvg, color: '#475569'}] : [])];
   const list = rows.slice().sort((a, b) => String(b.d).localeCompare(String(a.d)));
   const unit = t => `<small style="font-size:15px;font-weight:600"> ${t}</small>`;
   const ymd = new Date().toISOString().slice(0, 10), flt = `${S6.cat === 'all' ? '전체 분류' : S6.cat} · ${filterSummary().split(' · ').slice(0, 2).join(' · ')}${S6.q.trim() ? ' · 검색 ' + S6.q.trim() : ''}`;
@@ -1169,6 +1195,9 @@ function p6() {
       <p class="note">점수는 교육 1건당 문항별 평균이며 5점 만점입니다. 4점 미만은 주황색 글씨, 4.5점 이상은 굵은 글씨로 표시됩니다. 설문을 실시하지 않았거나 시트에 점수가 없는 교육은 제외됩니다.</p></section>
     <section class="card" style="margin-top:14px"><h2>분류별 평균</h2>
       <div class="tw" style="max-height:none"><table class="p6t"><thead><tr><th>분류</th><th>교육 수</th>${SQ.map(q => `<th title="${esc(q[1])}">${esc(q[0])}</th>`).join('')}</tr></thead><tbody>${catRows}</tbody></table></div></section>
+    <section class="card" style="margin-top:14px"><h2>분류별 평균 그래프</h2><p class="hint">문항별로 분류마다 막대를 나란히 비교합니다 · 세로축은 ${esc(String(Math.min(3, Math.floor(Math.min(...chartSeries.flatMap(x => x.a).filter(v => v != null), 3)))))}점부터 5점까지입니다(차이가 잘 보이도록 아래쪽을 잘라 냈습니다) · 막대에 마우스를 올리면 값이 표시됩니다</p>
+      <div class="legend">${chartSeries.map(x => `<span><i style="background:${x.color}"></i>${esc(x.c)}</span>`).join('')}</div>
+      ${chart6(chartSeries, innerWidth <= 820 ? chartW(640) : Math.max(560, ($('#view').clientWidth - 40) || 640))}</section>
     <section class="card" style="margin-top:14px"><h2>교육별 상세 <span class="tag">${n}건</span></h2>
       <div class="tw"><table class="p6t"><thead><tr><th>일자</th><th>분류</th><th>교육명</th><th>참석</th>${SQ.map(q => `<th title="${esc(q[1])}">${esc(q[0])}</th>`).join('')}</tr></thead><tbody>${list.map(r => `<tr><td>${esc(r.d)}</td><td>${esc(r.k || '미분류')}</td><td style="white-space:normal">${esc(r.t)}</td><td class="num">${r.n === '' || r.n == null ? '–' : esc(r.n)}</td>${r.s.map(sc6).join('')}</tr>`).join('') || `<tr><td colspan="${4 + SQ.length}" class="msg">조건에 맞는 설문 결과가 없습니다.</td></tr>`}</tbody></table></div></section>
     <section class="card" style="margin-top:14px"><h2>문항 안내</h2><ul class="hint" style="margin:6px 0 0;padding-left:18px;line-height:1.7">${SQ.map(q => `<li><b>${esc(q[0])}</b>${q[1] ? ' : ' + esc(q[1]) : ''}</li>`).join('')}</ul></section>`;
