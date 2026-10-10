@@ -292,6 +292,16 @@ body.locked{overflow:hidden}
   .rs td.num{padding:3px 4px!important}
 }
 .pnote{display:none}
+.grid2e{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:1560px){.grid2e{grid-template-columns:minmax(0,1fr)}}
+.rkcard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--surface)}
+.rkh{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;margin-bottom:6px}.dotc{width:9px;height:9px;border-radius:50%;flex:none}
+.rk{display:grid;grid-template-columns:30px 84px 78px minmax(40px,1fr) 64px 78px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:default}.rk:first-of-type{border-top:0}
+.rkb{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;color:#fff;font-size:12.5px;font-weight:700}
+.rkn{font-size:15px}.rkg{justify-self:start;padding:2px 9px;border-radius:6px;background:var(--sunk);color:var(--ink2);font-size:11.5px;white-space:nowrap}
+.rkbar{height:9px;border-radius:99px;background:var(--sunk);overflow:hidden}.rkbar i{display:block;height:100%;border-radius:99px}
+.rkv{text-align:right;font-size:15px}.rks{text-align:right;font-size:11.5px;color:var(--muted);white-space:nowrap}
+@media (max-width:640px){.rk{grid-template-columns:26px 70px minmax(30px,1fr) 56px;gap:8px}.rkg,.rks{display:none}}
 th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover{color:var(--accent)}
 th.sortable .sk{margin-left:5px;font-size:10px;color:var(--accent)}th.sortable .sk.off{color:var(--ink3,#9aa3b2);opacity:.6}th.sortable sup{font-size:8px}
 @media print{body.pl7 .stack>*:not(#courses7){display:none!important}body.pl7 th.sortable .sk{display:none}}
@@ -317,6 +327,7 @@ th.sortable .sk{margin-left:5px;font-size:10px;color:var(--accent)}th.sortable .
       <button class="navbtn" data-page="p2"><span class="ic">▦</span>직무·관리자교육</button>
       <button class="navbtn" data-page="p7"><span class="ic">▧</span>부서이동자·특성화 교육</button>
       <button class="navbtn" data-page="p3"><span class="ic">▥</span>부서별 참석현황</button>
+      <button class="navbtn" data-page="p8"><span class="ic">◧</span>부서별 참석현황 (세부분석)</button>
       <button class="navbtn" data-page="p6"><span class="ic">★</span>직무교육 운영 만족도</button>
       <button class="navbtn" data-page="p4"><span class="ic">✓</span>데이터 점검</button>
       <button class="navbtn" data-page="p5"><span class="ic">✎</span>분류 관리</button>
@@ -430,6 +441,7 @@ const PAGES = {
   p1:['종합 현황','정기직무교육·응급간호술기·주제별 술기·전담간호사 직무교육·선임간호사 교육·파트장 교육 6개 구분의 교육 실시와 참석 현황입니다.'],
   p2:['직무·관리자교육','직무교육(정기·응급·주제별·전담)과 관리자교육(선임간호사·파트장)을 한 화면에서 구분별로 확인합니다.'],
   p3:['부서별 직무교육 참석현황','병동 순서(14A → … → PAM → 기타)에 맞춰 6개 구분별 참석 인원을 정리했습니다.'],
+  p8:['부서별 참석현황 (세부분석)','부서별 참석 순위와 지표(실인원·인당 참석 횟수·참석 구분 수·평균 대비)를 분석합니다. (간호교육팀·간호국)'],
   p6:['직무교육 운영 만족도','교육 후 설문(5점 만점)의 문항별 평균점수를 교육별·분류별로 확인합니다. 시트2_분류결과의 K~P열 값을 불러옵니다. (간호교육팀·간호국)'],
   p7:['부서이동자·부서별 특성화 교육','부서이동자 교육과 부서별 특성화 교육의 실시와 참석 현황입니다. 직무·관리자교육 페이지와 같은 구성입니다.'],
   p5:['분류 관리','시트에 자동 입력된 교육 중 분류되지 않은 교육을 구분·교육과정명으로 지정합니다. 지정한 내용은 구글시트에 저장되어 다음 집계부터 자동 반영됩니다.'],
@@ -528,7 +540,7 @@ function render() {
   if (deptActive()) { CTX = {}; ATT.forEach(a => { if (inR(a.s) && catOK(a.s.k) && deptSel(a.di)) CTX[a.sid] = (CTX[a.sid] || 0) + 1; }); }
   renderFilters();
   ensurePrev();
-  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5, p6:p6, p7:p7})[S.page]();
+  $('#view').innerHTML = ({p1:p1, p2:p2, p3:p3, p4:p4, p5:p5, p6:p6, p7:p7, p8:p8})[S.page]();
   bind();
 }
 // 간호교육팀 관리자: 부서 필터에서 1개 부서를 고르면 그 부서 파트장에게 보이는 참석자 명단을 함께 표시(미리보기)
@@ -875,6 +887,131 @@ function matrix() {
   const allTot = S.metric === 'rows' ? at.length : uniq(at);
   return {cells, totals, colSum, allTot, unk, unkTot};
 }
+// ---- P3 정렬·분석 ----
+const S3 = {sort: [], asort: [], m: 'n'};
+const ANA_EXCL = ['간호국', '간호교육팀', '기타']; // 분석(순위) 대상이 아닌 지원 부서
+const S3M = {n: '참석 연인원', u: '참석 실인원', per: '인당 참석 횟수', cov: '참석 구분 수'};
+function sortMark3(list, c) {
+  const i = list.findIndex(k => k.c === c), k = list[i];
+  return k ? `<span class="sk">${k.dir > 0 ? '▲' : '▼'}${list.length > 1 ? `<sup>${i + 1}</sup>` : ''}</span>` : '<span class="sk off">⇅</span>';
+}
+function toggleSort3(list, c, multi) {
+  const i = list.findIndex(k => k.c === c);
+  if (multi) { if (i >= 0) list[i].dir *= -1; else list.push({c, dir: 1}); return list; }
+  if (list.length === 1 && i === 0) { list[0].dir *= -1; return list; }
+  list.length = 0; list.push({c, dir: 1}); return list;
+}
+// 부서 행 정렬(순서 인덱스 반환): 기본은 부서 순서
+function ordMatrix3(cellsV, totals) {
+  const idx = DEPTS.map((_, i) => i);
+  if (!S3.sort.length) return idx;
+  const val = (i, c) => c === 'd' ? i : c === 't' ? totals[i] : cellsV[i][+c.slice(1)];
+  return idx.sort((a, b) => { for (const k of S3.sort) { const r = val(a, k.c) - val(b, k.c); if (r) return r * k.dir; } return a - b; });
+}
+const sortTh3 = (c, label, attr = '', list = 'm') => `<th class="sortable" data-${list === 'm' ? 's3' : 'sa3'}="${c}" ${attr} title="누르면 정렬합니다 (Shift+클릭: 추가 기준)">${label}${sortMark3(list === 'm' ? S3.sort : S3.asort, c)}</th>`;
+// 부서별 분석 지표
+function ana3() {
+  const KI = KEYS.map((k, i) => i).filter(i => catOK(KEYS[i]));
+  const at = attF().filter(a => a.di >= 0 && deptAllowed(a.di));
+  const st = DEPTS.map(() => ({n: 0, p: new Set(), k: new Set(), reg: 0}));
+  at.forEach(a => { const o = st[a.di]; o.n++; if (a.p >= 0) o.p.add(a.p); o.k.add(a.s.k); if (a.s.k === 'REG') o.reg++; });
+  const tot = at.length;
+  const rows = DEPTS.map((d, i) => ({i, d, n: st[i].n, u: st[i].p.size, cov: KI.filter(j => st[i].k.has(KEYS[j])).length, reg: st[i].reg}))
+    .filter(r => deptSel(r.i) && deptAllowed(r.i) && !ANA_EXCL.includes(r.d));
+  const avg = rows.length ? rows.reduce((t, r) => t + r.n, 0) / rows.length : 0;
+  rows.forEach(r => { r.per = r.u ? r.n / r.u : 0; r.share = tot ? r.n / tot * 100 : 0; r.rel = avg ? r.n / avg * 100 : 0; });
+  const ranked = rows.slice().sort((a, b) => b[S3.m] - a[S3.m] || b.n - a.n || a.i - b.i);
+  rows.forEach(r => { r.rank = rows.slice().sort((a, b) => b.n - a.n || a.i - b.i).findIndex(x => x.i === r.i) + 1; });
+  return {rows, ranked, avg, tot, nk: KI.length};
+}
+function anaTags3(r, nk, nrows) {
+  const t = [];
+  if (!r.n) t.push('<span class="st warn">참석 없음</span>');
+  else {
+    if (r.rank <= 3) t.push('<span class="st done">상위</span>');
+    if (nrows >= 7 && r.rank > nrows - 3) t.push('<span class="st warn">하위</span>');
+    if (r.rel < 50) t.push('<span class="st warn">평균의 50% 미만</span>');
+    if (r.cov <= Math.ceil(nk / 2) - 1) t.push(`<span class="st warn">참석 구분 ${r.cov}/${nk}</span>`);
+  }
+  return t.join(' ');
+}
+function anaSummary3(A) {
+  if (!A.rows.length) return '';
+  const byN = A.rows.slice().sort((a, b) => b.n - a.n || a.i - b.i), best = byN[0], worst = byN[byN.length - 1];
+  const withU = A.rows.filter(r => r.u).sort((a, b) => b.per - a.per), pb = withU[0], pw = withU[withU.length - 1];
+  const low = A.rows.filter(r => r.n < A.avg * 0.5);
+  const lines = [
+    `참석 연인원이 가장 많은 부서는 <b>${esc(best.d)}</b>(${fmt(best.n)}명), 가장 적은 부서는 <b>${esc(worst.d)}</b>(${fmt(worst.n)}명)입니다. 부서 평균은 ${A.avg.toFixed(1)}명입니다.`,
+    low.length ? `평균의 50% 미만인 부서는 <b>${low.length}곳</b>입니다: ${esc(low.slice(0, 8).map(r => r.d).join(', '))}${low.length > 8 ? ' 외' : ''}.` : '평균의 50% 미만인 부서는 없습니다.'
+  ];
+  if (pb && pw && pb !== pw) lines.push(`인당 참석 횟수는 <b>${esc(pb.d)}</b>가 ${pb.per.toFixed(2)}회로 가장 높고 <b>${esc(pw.d)}</b>가 ${pw.per.toFixed(2)}회로 가장 낮습니다.`);
+  const gap = A.rows.filter(r => r.cov <= Math.ceil(A.nk / 2) - 1 && r.n).length;
+  if (gap) lines.push(`6개 구분 중 절반 이하만 참석한 부서가 ${gap}곳 있습니다(표의 비고 참고).`);
+  return lines.map(x => `<li>${x}</li>`).join('');
+}
+function anaSec3() {
+  const A = ana3(); if (!A.rows.length) return '';
+  const m = S3.m, ranked = A.ranked, mx = Math.max(1e-9, ...ranked.map(r => r[m])), top = new Set(ranked.slice(0, 3).map(r => r.i)), low = new Set(ranked.length >= 7 ? ranked.slice(-3).map(r => r.i) : []);
+  const fv = r => m === 'per' ? r[m].toFixed(2) + '회' : m === 'cov' ? `${r[m]}/${A.nk}` : fmt(r[m]);
+  const bar = r => `<div class="l"><span>${esc(r.d)}</span><span class="b"><i style="width:${r[m] / mx * 100}%;background:${top.has(r.i) ? 'var(--accent)' : low.has(r.i) ? '#f59e0b' : '#9fb0cf'}"></i></span><span class="num" style="text-align:right">${fv(r)}</span></div>`;
+  const keys = S3.asort.length ? S3.asort : [{c: 'rank', dir: 1}];
+  const g = {rank: r => r.rank, d: r => r.i, n: r => r.n, u: r => r.u, per: r => r.per, share: r => r.share, cov: r => r.cov, reg: r => r.reg, rel: r => r.rel};
+  const list = A.rows.slice().sort((a, b) => { for (const k of keys) { const x = g[k.c](a) - g[k.c](b); if (x) return x * k.dir; } return a.rank - b.rank; });
+  const tr = r => `<tr><td class="num">${r.rank}</td><th>${esc(r.d)}</th><td class="num">${fmt(r.n)}</td><td class="num">${fmt(r.u)}</td><td class="num">${r.u ? r.per.toFixed(2) : '–'}</td><td class="num">${r.share.toFixed(1)}%</td><td class="num">${r.cov}/${A.nk}</td><td class="num">${fmt(r.reg)}</td><td class="num">${r.rel.toFixed(0)}%</td><td style="white-space:normal;text-align:left">${anaTags3(r, A.nk, A.rows.length)}</td></tr>`;
+  const mchip = k => `<button class="chip" data-m3="${k}" aria-pressed="${m === k}">${S3M[k]}</button>`;
+  return `<section class="card" id="ana3" style="margin-top:0">
+    <div class="tools"><div><h2>부서별 참석 분석</h2><p class="hint" style="margin:0">위 조회 조건(기준일시·교육 종류·부서)이 그대로 적용됩니다 · 간호국·간호교육팀·기타는 순위에서 제외</p></div>
+      <div class="nop" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a3="xl">분석 엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하세요">PDF 저장</button></div></div>
+    <div class="callout" style="margin-top:10px"><b>한눈에 보기</b><ul class="plain" style="margin:6px 0 0">${anaSummary3(A)}</ul></div>
+    <div class="grid2" style="margin-top:14px;align-items:start">
+      <div>
+        <p class="hint">부서별 ${esc(S3M[m])} · <span style="color:var(--accent)">■</span> 상위 3 <span style="color:#f59e0b">■</span> 하위 3 · 부서 평균 연인원 ${A.avg.toFixed(1)}명</p>
+        <div class="mini pos">${ranked.map(bar).join('')}</div>
+      </div>
+      <div class="note" style="line-height:1.7"><b style="color:var(--ink2)">지표 설명</b><br>
+        · <b>연인원</b>: 한 교육에 한 번 참석하면 1<br>· <b>실인원</b>: 중복을 뺀 참석 직원 수<br>· <b>인당 참석 횟수</b>: 연인원 ÷ 실인원(교육을 얼마나 꾸준히 받았는지)<br>· <b>참석 구분 수</b>: 6개 구분 중 한 번이라도 참석한 구분 수<br>· <b>평균 대비</b>: 부서 연인원 ÷ 부서 평균<br><br>
+        ※ 부서 규모(재직 인원)가 반영되지 않은 수치라 큰 부서가 높게 나옵니다. <b>참석률(%)</b> 비교는 부서별 재직 인원 자료가 있어야 정확히 계산할 수 있습니다.</div>
+    </div>
+    <div class="tw" style="margin-top:14px"><table><thead><tr>${sortTh3('rank', '순위', '', 'a')}${sortTh3('d', '부서', '', 'a')}${sortTh3('n', '연인원', '', 'a')}${sortTh3('u', '실인원', '', 'a')}${sortTh3('per', '인당 참석 횟수', '', 'a')}${sortTh3('share', '전체 대비 비중', '', 'a')}${sortTh3('cov', '참석 구분 수', '', 'a')}${sortTh3('reg', '정기직무교육', '', 'a')}${sortTh3('rel', '평균 대비', '', 'a')}<th style="text-align:left">비고</th></tr></thead><tbody>${list.map(tr).join('')}</tbody></table></div>
+  </section>`;
+}
+async function exportAna3() {
+  try {
+    const A = ana3(); if (!A.rows.length) { alert('분석할 부서가 없습니다.'); return; }
+    const X = await loadXLSX(), wb = X.utils.book_new();
+    const plain = h => h.replace(/<[^>]+>/g, '');
+    const lines = anaSummary3(A).split('</li>').map(x => plain(x).trim()).filter(Boolean);
+    const rows = A.rows.slice().sort((a, b) => a.rank - b.rank).map(r => [r.rank, r.d, r.n, r.u, r.u ? +r.per.toFixed(2) : '', +r.share.toFixed(1), `${r.cov}/${A.nk}`, r.reg, +r.rel.toFixed(0), plain(anaTags3(r, A.nk, A.rows.length)).replace(/\s+/g, ' ')]);
+    const ws = X.utils.aoa_to_sheet([[`부서별 직무교육 참석 분석 · ${filterSummary()}`], ...lines.map(x => [x]), [], ['순위', '부서', '연인원', '실인원', '인당 참석 횟수', '전체 대비 비중(%)', '참석 구분 수', '정기직무교육', '평균 대비(%)', '비고'], ...rows]);
+    ws['!cols'] = [{wch: 6}, {wch: 14}, {wch: 10}, {wch: 10}, {wch: 14}, {wch: 16}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 36}];
+    X.utils.book_append_sheet(wb, ws, '부서별 분석');
+    X.writeFile(wb, ('부서별_참석분석_' + filterSummary().split(' · ').slice(0, 2).join('_') + '.xlsx').replace(/[\\/:*?"<>|]/g, ''));
+  } catch (e) { alert(e.message || e); }
+}
+function top5Sec3(A) {
+  const m = S3.m, nk = A.nk, grp = r => (GROUPS.find(g => g[1].includes(r.i)) || [''])[0];
+  const high = A.ranked.slice(0, 5), low = A.ranked.slice(-5).reverse();
+  const mx = Math.max(1e-9, ...A.ranked.map(r => r[m]));
+  const val = r => m === 'per' ? r.per.toFixed(2) + '회' : m === 'cov' ? `${r.cov}/${nk}` : fmt(r[m]) + '명';
+  const sub = r => m === 'n' ? `실인원 ${fmt(r.u)}명` : m === 'u' ? `연인원 ${fmt(r.n)}명` : m === 'per' ? `${fmt(r.n)}/${fmt(r.u)}명` : `연인원 ${fmt(r.n)}명`;
+  const tip = r => `${r.d}${grp(r) ? ' (' + grp(r) + ')' : ''}\n연인원 ${fmt(r.n)}명 · 실인원 ${fmt(r.u)}명\n인당 ${r.u ? r.per.toFixed(2) : '–'}회 · 평균 대비 ${r.rel.toFixed(0)}%`.replace(/\n/g, ' / ');
+  const row = (r, i, color, soft) => `<div class="rk" data-tip="${esc(tip(r))}"><span class="rkb" style="background:${i < 3 ? color : soft}">${i + 1}</span><b class="rkn">${esc(r.d)}</b><span class="rkg">${esc(grp(r))}</span><span class="rkbar"><i style="width:${Math.max(r[m] > 0 ? 2 : 0, r[m] / mx * 100)}%;background:${color}"></i></span><b class="rkv num">${val(r)}</b><span class="rks num">${sub(r)}</span></div>`;
+  const chip = k => `<button class="chip" data-m3="${k}" aria-pressed="${m === k}">${S3M[k]}</button>`;
+  return `<section class="card" id="top3" style="margin-top:0">
+    <div class="tools"><div><h2>부서별 참석 순위</h2><p class="hint" style="margin:0">${esc(S3M[m])} 기준 · 부서 ${A.rows.length}곳(간호국·간호교육팀·기타 제외) · 위 조회 조건이 적용됩니다 · 부서에 마우스를 올리면 상세가 표시됩니다</p></div>
+      <div class="seg nop"><span class="gl">순위 기준</span>${Object.keys(S3M).map(chip).join('')}</div></div>
+    <div class="grid2e" style="margin-top:12px">
+      <div class="rkcard"><div class="rkh"><span class="dotc" style="background:var(--accent)"></span>${esc(S3M[m])} 높은 부서 TOP 5</div>${high.map((r, i) => row(r, i, 'var(--accent)', '#7fa6ee')).join('')}</div>
+      <div class="rkcard"><div class="rkh"><span class="dotc" style="background:#f59e0b"></span>${esc(S3M[m])} 낮은 부서 TOP 5</div>${low.map((r, i) => row(r, i, '#f59e0b', '#f7c46c')).join('')}</div>
+    </div></section>`;
+}
+function p8() {
+  const A = ana3();
+  if (!A.rows.length) return '<div class="callout">조회 조건에 해당하는 부서 데이터가 없습니다.</div>';
+  const pdt = new Date(), pnow = `${pdt.getFullYear()}-${String(pdt.getMonth() + 1).padStart(2, '0')}-${String(pdt.getDate()).padStart(2, '0')} ${String(pdt.getHours()).padStart(2, '0')}:${String(pdt.getMinutes()).padStart(2, '0')}`;
+  return `<div class="phdr"><b>부서별 직무교육 참석현황 (세부분석)</b> · 조회 조건 ${esc(filterSummary())} · 출력 ${pnow}</div>
+  <div class="stack">${top5Sec3(A)}${anaSec3()}</div>`;
+}
 function p3() {
   const {cells, totals, colSum, allTot, unk, unkTot} = matrix();
   const colMax = KEYS.map((k, ki) => Math.max(1, ...cells.map(r => r[ki])));
@@ -883,8 +1020,8 @@ function p3() {
   const cellsV = cells.map(r => KI.map(i => r[i])), colSumV = KI.map(i => colSum[i]), unkV = KI.map(i => unk[i]);
   const heat = () => ''; // 본문 색 바탕 없음
   const ss = sessF();
-  const head = KI.map(i => { const k = KEYS[i]; const n = ss.filter(s => s.k === k && s.st === 'done').length; return `<th ${cvar(k)}><span class="cdot"></span>${KN[k]}<br><span class="note num">${n}회 실시</span></th>`; }).join('');
-  const body = DEPTS.map((d, i) => !(deptSel(i) && deptAllowed(i)) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cellsV[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
+  const head = KI.map((i, j) => { const k = KEYS[i]; const n = ss.filter(s => s.k === k && s.st === 'done').length; return sortTh3('k' + j, `<span class="cdot"></span>${KN[k]}<br><span class="note num">${n}회 실시</span>`, cvar(k)); }).join('');
+  const body = ordMatrix3(cellsV, totals).map(i => [DEPTS[i], i]).map(([d, i]) => !(deptSel(i) && deptAllowed(i)) ? '' : `<tr data-dept="${i}" style="cursor:pointer"><th>${esc(d)}</th>${cellsV[i].map((v, ki) => `<td class="num heat ${v ? '' : 'zero'}" ${heat(v, colMax[ki], KEYS[ki])}>${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot heat ${totals[i] ? '' : 'zero'}" ${heat(totals[i], totMax)}>${totals[i] ? fmt(totals[i]) : '·'}</td></tr>`).join('');
   const unkHtml = unkTot ? `<tr><th title="시트1 참석자 명단에 아직 없는 교육(시트2 인원)">부서 미확인*</th>${unkV.map(v => `<td class="num ${v ? '' : 'zero'}">${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot">${fmt(unkTot)}</td></tr>` : '';
   const unkNote = unkTot ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : '';
   const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSumV.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
@@ -896,9 +1033,9 @@ function p3() {
   <div class="card tools nop" style="justify-content:flex-end">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
   </div>
-  <div class="tw"><table><thead><tr><th>부서</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
+  <div class="tw"><table><thead><tr>${sortTh3('d', '부서')}${head}<th class="sortable tot" data-s3="t" title="누르면 정렬합니다 (Shift+클릭: 추가 기준)">합계${sortMark3(S3.sort, 't')}</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${own ? '' : unkNote}
-  ${own ? '' : `<p class="note nop">부서를 누르면 상세를 볼 수 있습니다. 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 15A→간호교육팀, 목록에 없는 부서→기타).</p>`}
+  ${own ? '' : `<p class="note nop">부서를 누르면 상세를 볼 수 있습니다. 표 머리글을 누르면 정렬됩니다(Shift+클릭: 추가 기준). 부서 분류는 시트1의 '부서' 값을 기준으로 했습니다(예: 응급중환자실간호→EICU, 응급의료센터→ER(ERD), 전담간호·진료과→PAM, 15A→간호교육팀, 목록에 없는 부서→기타).</p>`}
   ${own ? '' : dp}
   ${mgrSec()}`;
 }
@@ -1320,6 +1457,10 @@ function bind() {
   }));  $('#q5')?.addEventListener('change', e => { S5.q = e.target.value; render(); });
   document.querySelectorAll('tr[data-ck]').forEach(tr => tr.addEventListener('click', () => { const k = tr.dataset.ck; S7.open.has(k) ? S7.open.delete(k) : S7.open.add(k); render(); }));
   document.querySelectorAll('[data-sort]').forEach(th => th.addEventListener('click', e => { toggleSort7(th.dataset.sort, e.shiftKey); render(); }));
+  document.querySelectorAll('[data-s3]').forEach(th => th.addEventListener('click', e => { toggleSort3(S3.sort, th.dataset.s3, e.shiftKey); render(); }));
+  document.querySelectorAll('[data-sa3]').forEach(th => th.addEventListener('click', e => { toggleSort3(S3.asort, th.dataset.sa3, e.shiftKey); render(); }));
+  document.querySelectorAll('[data-m3]').forEach(b => b.addEventListener('click', () => { S3.m = b.dataset.m3; render(); }));
+  document.querySelectorAll('[data-a3="xl"]').forEach(b => b.addEventListener('click', exportAna3));
   document.querySelectorAll('[data-a7]').forEach(b => b.addEventListener('click', () => act7(b)));
   document.querySelectorAll('[data-kx]').forEach(b => b.addEventListener('click', () => { S7.k = b.dataset.kx; render(); }));
   document.querySelectorAll('[data-a6]').forEach(b => b.addEventListener('click', () => act6(b)));
@@ -1441,9 +1582,9 @@ const mgrLabel = () => { const m = MG(); return m.all ? '전체 부서' : m.dept
 // 접근 구분: admin(간호국·간호교육팀, 비밀번호) / all(전체부서 구글 계정) / mgr(간호단위 파트장, 구글 계정)
 // 직무교육 운영 만족도: 간호교육팀(비밀번호) + 부서관리자 탭에서 부서가 간호국·간호교육팀인 구글 계정(전체부서접근 포함)
 const canSat = () => !!(S.admin || (S.mgr && (S.mgr.all || (S.mgr.depts || []).some(d => d === '간호국' || d === '간호교육팀'))));
-const pagesFor = r => { const b = (ROLE_PAGES[r] || []).slice(); if (r && canSat() && !b.includes('p6')) b.push('p6'); return b; };
+const pagesFor = r => { const b = (ROLE_PAGES[r] || []).slice(); if (r && canSat()) ['p8', 'p6'].forEach(x => { if (!b.includes(x)) b.push(x); }); return b; };
 const role = () => S.admin ? 'admin' : S.mgr ? (S.mgr.all ? 'all' : 'mgr') : null;
-const ROLE_PAGES = {admin: ['p1', 'p2', 'p7', 'p3', 'p6', 'p4', 'p5'], all: ['p1', 'p2', 'p7', 'p3'], mgr: ['p3']};
+const ROLE_PAGES = {admin: ['p1', 'p2', 'p7', 'p3', 'p8', 'p6', 'p4', 'p5'], all: ['p1', 'p2', 'p7', 'p3'], mgr: ['p3']};
 const ROLE_LOCKED = {all: ['p4', 'p5']}; // 메뉴에는 보이지만 🔒 잠금(간호교육팀 관리자 전용)
 const roleLabel = () => ({admin: '관리자 (간호교육팀)', all: '관리자 (간호국)', mgr: '관리자 (간호단위 파트장)'})[role()] + (S.mgr ? ' · ' + S.mgr.name : '');
 function applyAuth() {
