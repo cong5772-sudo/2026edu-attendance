@@ -888,7 +888,7 @@ function matrix() {
   return {cells, totals, colSum, allTot, unk, unkTot};
 }
 // ---- P3 정렬·분석 ----
-const S3 = {sort: [], asort: [], m: 'n'};
+const S3 = {sort: [], asort: [], m: 'n'}; // 순위 기준(칩): n 연인원 / per 인당 참석 횟수 / cov 참석 구분 수
 const ANA_EXCL = ['간호국', '간호교육팀', '기타']; // 분석(순위) 대상이 아닌 지원 부서
 const S3M = {n: '참석 연인원', u: '참석 실인원', per: '인당 참석 횟수', cov: '참석 구분 수'};
 function sortMark3(list, c) {
@@ -999,7 +999,7 @@ function top5Sec3(A) {
   const chip = k => `<button class="chip" data-m3="${k}" aria-pressed="${m === k}">${S3M[k]}</button>`;
   return `<section class="card" id="top3" style="margin-top:0">
     <div class="tools"><div><h2>부서별 참석 순위</h2><p class="hint" style="margin:0">${esc(S3M[m])} 기준 · 부서 ${A.rows.length}곳(간호국·간호교육팀·기타 제외) · 위 조회 조건이 적용됩니다 · 부서에 마우스를 올리면 상세가 표시됩니다</p></div>
-      <div class="seg nop"><span class="gl">순위 기준</span>${Object.keys(S3M).map(chip).join('')}</div></div>
+      <div class="seg nop"><span class="gl">순위 기준</span>${Object.keys(S3M).filter(k => k !== 'u').map(chip).join('')}</div></div>
     <div class="grid2e" style="margin-top:12px">
       <div class="rkcard"><div class="rkh"><span class="dotc" style="background:var(--accent)"></span>${esc(S3M[m])} 높은 부서 TOP 5</div>${high.map((r, i) => row(r, i, 'var(--accent)', '#7fa6ee')).join('')}</div>
       <div class="rkcard"><div class="rkh"><span class="dotc" style="background:#f59e0b"></span>${esc(S3M[m])} 낮은 부서 TOP 5</div>${low.map((r, i) => row(r, i, '#f59e0b', '#f7c46c')).join('')}</div>
@@ -1582,6 +1582,7 @@ const mgrLabel = () => { const m = MG(); return m.all ? '전체 부서' : m.dept
 // 접근 구분: admin(간호국·간호교육팀, 비밀번호) / all(전체부서 구글 계정) / mgr(간호단위 파트장, 구글 계정)
 // 직무교육 운영 만족도: 간호교육팀(비밀번호) + 부서관리자 탭에서 부서가 간호국·간호교육팀인 구글 계정(전체부서접근 포함)
 const canSat = () => !!(S.admin || (S.mgr && (S.mgr.all || (S.mgr.depts || []).some(d => d === '간호국' || d === '간호교육팀'))));
+const lockedFor = r => (r === 'all' || (r === 'mgr' && canSat())) ? ['p4', 'p5'] : (ROLE_LOCKED[r] || []); // 메뉴에는 보이지만 🔒
 const pagesFor = r => { const b = (ROLE_PAGES[r] || []).slice(); if (r && canSat()) ['p8', 'p6'].forEach(x => { if (!b.includes(x)) b.push(x); }); return b; };
 const role = () => S.admin ? 'admin' : S.mgr ? (S.mgr.all ? 'all' : 'mgr') : null;
 const ROLE_PAGES = {admin: ['p1', 'p2', 'p7', 'p3', 'p8', 'p6', 'p4', 'p5'], all: ['p1', 'p2', 'p7', 'p3'], mgr: ['p3']};
@@ -1591,7 +1592,7 @@ function applyAuth() {
   const r = role(), ok = pagesFor(r);
   $('#login').hidden = !!r; document.body.classList.toggle('locked', !r);
   $('#role').hidden = $('#logout').hidden = $('#cmelink').hidden = !r; if (r) $('#role').textContent = roleLabel();
-  const lk = ROLE_LOCKED[r] || [];
+  const lk = lockedFor(r);
   document.querySelectorAll('[data-page]').forEach(b => {
     const pg = b.dataset.page, locked = lk.includes(pg);
     b.hidden = r ? !(ok.includes(pg) || locked) : false;
