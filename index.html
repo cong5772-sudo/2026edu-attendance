@@ -467,6 +467,16 @@ function catKeySummary() {
   const ks = ALLK.filter(k => S.cats.has(k));
   return ks.length <= 2 ? ks.map(k => ALLN[k]).join(', ') : ks.length + '개 선택';
 }
+function qSummary() {
+  if (!S.ms.size) return '전체';
+  const full = [1, 2, 3, 4].filter(q => [1, 2, 3].every(i => S.ms.has((q - 1) * 3 + i)));
+  return full.length * 3 === S.ms.size ? (full.length <= 2 ? full.map(q => q + '분기').join(', ') : full.length + '개 분기 선택') : S.ms.size + '개월 선택';
+}
+function mSummary() {
+  if (!S.ms.size) return '전체';
+  const ms = [...S.ms].sort((a, b) => a - b);
+  return ms.length <= 3 ? ms.join('·') + '월' : ms.length + '개월 선택';
+}
 function filterHTML() {
   const opt = (v, t, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? ' selected' : ''}>${esc(t)}</option>`;
   const chip = (f, v, t, on, dis) => `<button class="chip" data-f="${f}" data-v="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}>${t}</button>`;
@@ -476,8 +486,8 @@ function filterHTML() {
   const units = (grpIdx() || []).filter(deptAllowed);
   const hint = (S.page === 'p4' || S.page === 'p6') ? '<p class="fhint">' + (S.page === 'p6' ? '직무교육 운영 만족도 페이지는 기준일시(연도·분기·월)만 적용됩니다. 교육 종류·부서 조건은 적용되지 않습니다.' : '데이터 점검 페이지는 위 조회 조건과 무관하게 전체 데이터를 보여줍니다.') + '</p>' : '';
   return `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('y', 'all', '전체', !S.ys.size)}${YEARS.map(y => chip('y', y, y + '년', S.ys.has(y))).join('')}</div></div>
-    <div class="fs"><span class="fl">분기</span><div class="cg">${chip('q', 'all', '전체', !S.ms.size)}${[1, 2, 3, 4].map(q => chip('q', q, q + '분기', qOn(q))).join('')}</div></div>
-    <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({length: 12}, (_, i) => i + 1).map(m => chip('m', m, m + '월', S.ms.has(m), !monthHas(m))).join('')}</div></div>
+    <div class="fs ms-wrap"><span class="fl">분기</span>${combo('q', qSummary(), [['all', '전체', !S.ms.size], ...[1, 2, 3, 4].map(q => [q, q + '분기', qOn(q)])])}</div>
+    <div class="fs ms-wrap"><span class="fl">월</span>${combo('m', mSummary(), [['all', '전체', !S.ms.size], ...Array.from({length: 12}, (_, i) => i + 1).filter(m => monthHas(m) || S.ms.has(m)).map(m => [m, m + '월', S.ms.has(m)])])}</div>
     <div class="fs ms-wrap"><span class="fl">교육 종류</span>${combo('cg', catGroupSummary(), [['all', '전체', !S.cats.size], ...GK.map(([n, ks]) => [n, n, ks.every(k => S.cats.has(k))])])}</div>
     <div class="fs ms-wrap"><span class="fl">교육 구분</span>${combo('ck', catKeySummary(), [['all', '전체', !S.cats.size], ...ALLK.map(k => [k, ALLN[k], S.cats.has(k)])])}</div>
     <div class="fs"><span class="fl">부서</span><select data-f="grp">${opt('all', '전체 부서', S.grp)}${GROUPS.filter(g => g[1].some(deptAllowed)).map(g => opt(g[0], g[0], S.grp)).join('')}</select></div>
@@ -505,7 +515,7 @@ function handleF(f, v) {
     if (v === 'all') S.ms.clear();
     else { const q = +v, ms = [1, 2, 3].map(i => (q - 1) * 3 + i); if (ms.every(x => S.ms.has(x))) ms.forEach(x => S.ms.delete(x)); else ms.forEach(x => S.ms.add(x)); }
   }
-  else if (f === 'm') tog(S.ms, +v);
+  else if (f === 'm') { if (v === 'all') S.ms.clear(); else tog(S.ms, +v); }
   else if (f === 'cg') { if (v === 'all') S.cats.clear(); else { const ks = GK.find(g => g[0] === v)[1]; if (ks.every(k => S.cats.has(k))) ks.forEach(k => S.cats.delete(k)); else ks.forEach(k => S.cats.add(k)); } }
   else if (f === 'ck') { if (v === 'all') S.cats.clear(); else tog(S.cats, v); }
   else if (f === 'u') { if (v === 'all') S.units.clear(); else tog(S.units, +v); }
