@@ -416,7 +416,7 @@ const YEARS = [...new Set(MONTHS.map(m => +m.slice(0, 4)))];
 
 // 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
 S.p4done = false; S.p4dupdone = false; S.p4diffdone = false; S.p4noddone = false;
-Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null, incX:false}); // 기준일시(연도)·월·세부부서는 다중 선택
+Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null, scope:'main'}); // 기준일시(연도)·월·세부부서는 다중 선택
 function buildGroups() {
   GROUPS = [
     ['병동', DEPTS.slice(0, 17)],
@@ -615,8 +615,9 @@ const stLabel = s => ({done:'실시', plan:'예정', zero:'신청자 없음', no
 
 // ---- P1 ----
 function p1() {
-  // 보기 범위: 기본은 직무·관리자교육(6개 구분), 버튼을 누르면 부서이동자 교육·부서별 특성화 교육 포함
-  const incX = S.incX, ss = sessF(), ru = rowsU().filter(r => incX || KN[r.k]), K = visK().filter(k => incX || KN[k]);
+  // 보기 범위: 전체 / 직무·관리자교육(6개 구분, 기본) / 부서이동자·부서별 특성화 교육
+  const sc = S.scope, inScope = k => sc === 'all' || (sc === 'main' ? !!KN[k] : !KN[k]);
+  const ss = sc === 'x' ? [] : sessF(), ru = rowsU().filter(r => inScope(r.k)), K = visK().filter(inScope); // 부서이동자·특성화는 회차를 집계하지 않음
   const done = ss.filter(s => s.st === 'done'), plan = ss.filter(s => s.st === 'plan');
   const people = new Set(ru.filter(r => r.p >= 0).map(r => r.p)).size;
   const kpi = (l, v, u, sub) => `<div class="kpi"><div class="lab">${l}</div><div class="val">${v}<small>${u}</small></div><div class="sub">${sub}</div></div>`;
@@ -636,12 +637,13 @@ function p1() {
   const recent = done.slice().sort((a, b) => b.first.localeCompare(a.first)).slice(0, 6);
   const next = plan.slice().sort((a, b) => a.d.localeCompare(b.d)).slice(0, 6);
   const li = s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span><br>${esc(s.t)}</td><td class="r num">${s.st === 'done' ? fmt(s.n1) + '명' : '예정'}</td></tr>`;
-  const scopeBar = `<div class="card nop"><div class="seg"><span class="gl">보기 범위</span><button class="chip" data-incx="0" aria-pressed="${!incX}">직무·관리자교육 (기본)</button><button class="chip" data-incx="1" aria-pressed="${incX}">부서이동자·특성화 교육 포함</button>${incX ? '<span class="tag" style="margin-left:6px">부서이동자 교육 · 부서별 특성화 교육 포함해서 집계 중</span>' : ''}</div></div>`;
+  const scopeNote = {all: '직무·관리자교육 + 부서이동자·특성화 교육을 합쳐서 집계 중', x: '부서이동자 교육 · 부서별 특성화 교육만 집계 중'}[sc] || '';
+  const scopeBar = `<div class="card nop"><div class="seg"><span class="gl">보기 범위</span><button class="chip" data-scope="all" aria-pressed="${sc === 'all'}">전체</button><button class="chip" data-scope="main" aria-pressed="${sc === 'main'}">직무·관리자교육</button><button class="chip" data-scope="x" aria-pressed="${sc === 'x'}">부서이동자·특성화 교육</button>${scopeNote ? `<span class="tag" style="margin-left:6px">${scopeNote}</span>` : ''}</div></div>`;
   return `
   ${scopeBar}
   <div class="kpis">
     ${kpi('실시 교육', hasT ? done.length : '–', hasT ? '회' : '', hasT ? `계획 ${ss.length}회 중 · 실시율 ${Math.round(done.length / ss.length * 100)}% (직무·관리자교육)` : '선택한 구분은 회차를 집계하지 않습니다')}
-    ${kpi(incX ? '참석인원 (부서이동자·특성화 포함)' : '참석인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
+    ${kpi(sc === 'all' ? '참석인원 (전체)' : sc === 'x' ? '참석인원 (부서이동자·특성화)' : '참석인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
     ${kpi('예정 교육', hasT ? plan.length : '–', hasT ? '회' : '', plan.length ? `다음 ${md(plan.slice().sort((a, b) => a.d.localeCompare(b.d))[0].d)}` : '예정 없음')}
   </div>
   <div class="grid2">
@@ -1645,7 +1647,7 @@ function bind() {
   document.querySelectorAll('[data-sid]').forEach(r => r.addEventListener('click', () => openSession(+r.dataset.sid)));
   document.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.cat; go('p2'); }));
   document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.k; render(); }));
-  document.querySelectorAll('[data-incx]').forEach(b => b.addEventListener('click', () => { S.incX = b.dataset.incx === '1'; render(); }));
+  document.querySelectorAll('[data-scope]').forEach(b => b.addEventListener('click', () => { S.scope = b.dataset.scope; render(); }));
   document.querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { S.metric = b.dataset.metric; render(); }));
   document.querySelectorAll('[data-dept]').forEach(r => r.addEventListener('click', () => { S.dept = +r.dataset.dept; render(); $('#dp')?.scrollIntoView({behavior:'smooth', block:'nearest'}); }));
   document.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act5(b)));
