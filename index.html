@@ -1043,6 +1043,7 @@ function p3() {
   const unkHtml = unkTot ? `<tr><th title="시트1 참석자 명단에 아직 없는 교육(시트2 인원)">부서 미확인*</th>${unkV.map(v => `<td class="num ${v ? '' : 'zero'}">${v ? fmt(v) : '·'}</td>`).join('')}<td class="num tot">${fmt(unkTot)}</td></tr>` : '';
   const unkNote = unkTot ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : '';
   const foot = unkHtml + `<tr class="sum"><th>합계</th>${colSumV.map(v => `<td class="num">${fmt(v)}</td>`).join('')}<td class="num tot">${fmt(allTot)}</td></tr>`;
+  if (S.dept != null && !(deptSel(S.dept) && deptAllowed(S.dept))) S.dept = null; // 조회 조건에서 빠진 부서의 상세 창이 남지 않게 닫음
   const dp = S.dept != null ? deptPanel(S.dept) : '';
   const own = S.mgr && !S.mgr.all; // 간호단위 파트장(본인 부서만)
   const pdt = new Date(), pnow = `${pdt.getFullYear()}-${String(pdt.getMonth() + 1).padStart(2, '0')}-${String(pdt.getDate()).padStart(2, '0')} ${String(pdt.getHours()).padStart(2, '0')}:${String(pdt.getMinutes()).padStart(2, '0')}`;
