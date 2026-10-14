@@ -416,7 +416,7 @@ const YEARS = [...new Set(MONTHS.map(m => +m.slice(0, 4)))];
 
 // 조회 조건: 기간(전체/분기/월) + 부서(군) + 세부부서
 S.p4done = false; S.p4dupdone = false; S.p4diffdone = false; S.p4noddone = false;
-Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null}); // 기준일시(연도)·월·세부부서는 다중 선택
+Object.assign(S, {ys:new Set(), ms:new Set(), cats:new Set(), grp:'all', units:new Set(), open:null, incX:false}); // 기준일시(연도)·월·세부부서는 다중 선택
 function buildGroups() {
   GROUPS = [
     ['병동', DEPTS.slice(0, 17)],
@@ -615,7 +615,8 @@ const stLabel = s => ({done:'실시', plan:'예정', zero:'신청자 없음', no
 
 // ---- P1 ----
 function p1() {
-  const ss = sessF(), ru = rowsU(), K = visK();
+  // 보기 범위: 기본은 직무·관리자교육(6개 구분), 버튼을 누르면 부서이동자 교육·부서별 특성화 교육 포함
+  const incX = S.incX, ss = sessF(), ru = rowsU().filter(r => incX || KN[r.k]), K = visK().filter(k => incX || KN[k]);
   const done = ss.filter(s => s.st === 'done'), plan = ss.filter(s => s.st === 'plan');
   const people = new Set(ru.filter(r => r.p >= 0).map(r => r.p)).size;
   const kpi = (l, v, u, sub) => `<div class="kpi"><div class="lab">${l}</div><div class="val">${v}<small>${u}</small></div><div class="sub">${sub}</div></div>`;
@@ -635,10 +636,12 @@ function p1() {
   const recent = done.slice().sort((a, b) => b.first.localeCompare(a.first)).slice(0, 6);
   const next = plan.slice().sort((a, b) => a.d.localeCompare(b.d)).slice(0, 6);
   const li = s => `<tr data-sid="${s.id}"><td class="r">${md(s.first)}</td><td><span class="kc" ${cvar(s.k)}><i></i>${KN[s.k]}</span><br>${esc(s.t)}</td><td class="r num">${s.st === 'done' ? fmt(s.n1) + '명' : '예정'}</td></tr>`;
+  const scopeBar = `<div class="card nop"><div class="seg"><span class="gl">보기 범위</span><button class="chip" data-incx="0" aria-pressed="${!incX}">직무·관리자교육 (기본)</button><button class="chip" data-incx="1" aria-pressed="${incX}">부서이동자·특성화 교육 포함</button>${incX ? '<span class="tag" style="margin-left:6px">부서이동자 교육 · 부서별 특성화 교육 포함해서 집계 중</span>' : ''}</div></div>`;
   return `
+  ${scopeBar}
   <div class="kpis">
     ${kpi('실시 교육', hasT ? done.length : '–', hasT ? '회' : '', hasT ? `계획 ${ss.length}회 중 · 실시율 ${Math.round(done.length / ss.length * 100)}% (직무·관리자교육)` : '선택한 구분은 회차를 집계하지 않습니다')}
-    ${kpi('참석인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
+    ${kpi(incX ? '참석인원 (부서이동자·특성화 포함)' : '참석인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
     ${kpi('예정 교육', hasT ? plan.length : '–', hasT ? '회' : '', plan.length ? `다음 ${md(plan.slice().sort((a, b) => a.d.localeCompare(b.d))[0].d)}` : '예정 없음')}
   </div>
   <div class="grid2">
@@ -646,7 +649,7 @@ function p1() {
     <section class="card"><h2>구분별 참석 비중</h2><p class="hint">조회 조건 내 참석인원 기준</p>${shareBars(ru, K)}</section>
   </div>
   <section><h2 class="sech">구분별 실시 현황 <span class="note">(직무·관리자교육 카드를 누르면 상세 페이지로 이동)</span></h2><div class="cats">${cards || '<p class="note">조건에 해당하는 구분이 없습니다.</p>'}</div></section>
-  ${monthCat()}
+  ${monthCat(ru, K)}
   <div class="grid2">
     <section class="card"><h2>최근 실시 교육</h2><p class="hint">누르면 부서·직위별 참석을 볼 수 있습니다</p><div class="tw" style="max-height:none"><table class="tl"><tbody>${recent.map(li).join('') || '<tr><td>없음</td></tr>'}</tbody></table></div></section>
     <section class="card"><h2>예정 교육</h2><p class="hint">원내교육실시현황의 계획 일정 기준</p><div class="tw" style="max-height:none"><table class="tl"><tbody>${next.map(li).join('') || '<tr><td>예정 없음</td></tr>'}</tbody></table></div></section>
@@ -659,9 +662,8 @@ function shareBars(ru, K) {
     return `<div class="l"><span class="kc" ${cvar(k)}><i></i>${ALLN[k]}</span><span class="b"><i style="width:${n / tot * 100}%;background:var(--c-${k})"></i></span><span class="num" style="text-align:right">${Math.round(n / tot * 100)}%</span></div>`; }).join('')}</div>
     <p class="note" style="margin-top:12px">${GK.map(([n, ks]) => `${n} ${fmt(sumG(ks))}명`).join(' · ')}</p>`;
 }
-function monthCat() {
+function monthCat(rows, K) {
   const months = rangeMonths();
-  const rows = rowsU(), K = visK();
 
   const cell = {}, colT = {}, rowT = {}, all = S.metric === 'rows' ? 0 : new Set();
   const put = (o, key, p) => { if (S.metric === 'rows') o[key] = (o[key] || 0) + 1; else (o[key] ??= new Set()).add(p); };
@@ -1643,6 +1645,7 @@ function bind() {
   document.querySelectorAll('[data-sid]').forEach(r => r.addEventListener('click', () => openSession(+r.dataset.sid)));
   document.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.cat; go('p2'); }));
   document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { S.k = b.dataset.k; render(); }));
+  document.querySelectorAll('[data-incx]').forEach(b => b.addEventListener('click', () => { S.incX = b.dataset.incx === '1'; render(); }));
   document.querySelectorAll('[data-metric]').forEach(b => b.addEventListener('click', () => { S.metric = b.dataset.metric; render(); }));
   document.querySelectorAll('[data-dept]').forEach(r => r.addEventListener('click', () => { S.dept = +r.dataset.dept; render(); $('#dp')?.scrollIntoView({behavior:'smooth', block:'nearest'}); }));
   document.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act5(b)));
