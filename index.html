@@ -93,7 +93,7 @@ button{font-size:inherit;color:inherit}
 .head h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em}
 .head p{margin:4px 0 0;color:var(--ink2);font-size:13px;max-width:70ch}
 /* KPI */
-.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
 .kpi{padding:20px 22px;background:var(--surface);border:1px solid var(--line);border-radius:16px;display:grid;gap:6px;align-content:start;box-shadow:0 1px 2px rgba(17,24,39,.04)}
 .kpi .lab{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px;color:var(--ink2)}
 .kpi:nth-child(n+2) .lab::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
@@ -448,7 +448,7 @@ const PAGES = {
   p1:['종합 현황','정기직무교육·응급간호술기·주제별 술기·전담간호사 직무교육·선임간호사 교육·파트장 교육 6개 구분의 교육 실시와 참석 현황입니다.'],
   p2:['직무·관리자교육','직무교육(정기·응급·주제별·전담)과 관리자교육(선임간호사·파트장)을 한 화면에서 구분별로 확인합니다.'],
   p3:['부서별 직무교육 참석현황','병동 순서(14A → … → PAM → 기타)에 맞춰 6개 구분별 참석 인원을 정리했습니다.'],
-  p8:['부서별 참석현황 (세부분석)','부서별 참석 순위와 지표(실인원·인당 참석 횟수·참석 구분 수·평균 대비)를 분석합니다. (간호교육팀·간호국)'],
+  p8:['부서별 참석현황 (세부분석)','부서별 참석 순위와 지표(인당 참석 횟수·참석 구분 수·평균 대비)를 분석합니다. (간호교육팀·간호국)'],
   p6:['직무교육 운영 만족도','교육 후 설문(5점 만점)의 문항별 평균점수를 교육별·분류별로 확인합니다. 시트2_분류결과의 K~P열 값을 불러옵니다. (간호교육팀·간호국)'],
   p7:['부서이동자·부서별 특성화 교육','부서이동자 교육과 부서별 특성화 교육의 실시와 참석 현황입니다. 직무·관리자교육 페이지와 같은 구성입니다.'],
   p5:['분류 관리','시트에 자동 입력된 교육 중 분류되지 않은 교육을 구분·교육과정명으로 지정합니다. 지정한 내용은 구글시트에 저장되어 다음 집계부터 자동 반영됩니다.'],
@@ -597,7 +597,7 @@ function stackChart(months, byMonth, keys, h = 230, W = chartW(640)) {
     if (tot) g += `<text class="tot" x="${x + w/2}" y="${y - 4}" text-anchor="middle">${fmt(tot)}</text>`;
     g += `<text x="${x + w/2}" y="${H - 8}" text-anchor="middle">${bw < 30 ? +m.slice(5) : ml(m)}</text>`;
   });
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 참석 연인원 누적 막대">${g}</svg>`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="월별 참석인원 누적 막대">${g}</svg>`;
 }
 const legend = keys => `<div class="legend">${keys.map(k => `<span><i style="background:var(--c-${k})"></i>${ALLN[k]}</span>`).join('')}</div>`;
 function monthDataU(rows, keys) {
@@ -620,8 +620,8 @@ function p1() {
   const cards = K.map(k => {
     const n = ru.filter(r => r.k === k).length, u = new Set(ru.filter(r => r.k === k && r.p >= 0).map(r => r.p)).size;
     if (!KN[k]) return `<div class="catc" ${cvar(k)} style="cursor:default"><div><div class="grp">${GROUP[k]}</div><div class="n"><i></i>${ALLN[k]}</div></div>
-      <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>참석 연인원</small></div>
-      <small>실인원 ${fmt(u)}명 · 교육 회차는 집계하지 않습니다</small></div>`;
+      <div class="row"><span class="big">${fmt(n)}<small class="note"> 명</small></span><small>참석인원</small></div>
+      <small>교육 회차는 집계하지 않습니다</small></div>`;
     const a = ss.filter(s => s.k === k), d = a.filter(s => s.st === 'done');
     const pct = a.length ? Math.round(d.length / a.length * 100) : 0;
     return `<button class="catc" data-cat="${k}" ${cvar(k)}><div><div class="grp">${GROUP[k]}</div><div class="n"><i></i>${KN[k]}</div></div>
@@ -635,13 +635,12 @@ function p1() {
   return `
   <div class="kpis">
     ${kpi('실시 교육', hasT ? done.length : '–', hasT ? '회' : '', hasT ? `계획 ${ss.length}회 중 · 실시율 ${Math.round(done.length / ss.length * 100)}% (직무·관리자교육)` : '선택한 구분은 회차를 집계하지 않습니다')}
-    ${kpi('참석 연인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
-    ${kpi('참석 실인원', fmt(people), '명', '기간 내 1회 이상 참석(중복 제거)')}
+    ${kpi('참석인원', fmt(ru.length), '명', hasT && done.length ? `직무·관리자교육 회당 평균 ${(ru.filter(r => KN[r.k]).length / done.length).toFixed(1)}명` : '선택한 조건 전체')}
     ${kpi('예정 교육', hasT ? plan.length : '–', hasT ? '회' : '', plan.length ? `다음 ${md(plan.slice().sort((a, b) => a.d.localeCompare(b.d))[0].d)}` : '예정 없음')}
   </div>
   <div class="grid2">
-    <section class="card"><h2>월별 참석 연인원</h2><p class="hint">구분별 누적 · 막대를 누르면 값이 표시됩니다</p>${legend(K)}${stackChart(rangeMonths(), monthDataU(ru, K), K)}</section>
-    <section class="card"><h2>구분별 참석 비중</h2><p class="hint">조회 조건 내 참석 연인원 기준</p>${shareBars(ru, K)}</section>
+    <section class="card"><h2>월별 참석인원</h2><p class="hint">구분별 누적 · 막대를 누르면 값이 표시됩니다</p>${legend(K)}${stackChart(rangeMonths(), monthDataU(ru, K), K)}</section>
+    <section class="card"><h2>구분별 참석 비중</h2><p class="hint">조회 조건 내 참석인원 기준</p>${shareBars(ru, K)}</section>
   </div>
   <section><h2 class="sech">구분별 실시 현황 <span class="note">(직무·관리자교육 카드를 누르면 상세 페이지로 이동)</span></h2><div class="cats">${cards || '<p class="note">조건에 해당하는 구분이 없습니다.</p>'}</div></section>
   ${monthCat()}
@@ -673,7 +672,7 @@ function monthCat() {
   const foot = `<tr class="sum"><th>합계</th>${K.map(k => `<td class="num">${fmt(v(colT[k]))}</td>`).join('')}<td class="num tot">${fmt(grand)}</td></tr>`;
   return `<section class="card"><div class="tools"><div><h2>월별 구분별 참석 인원</h2><p class="hint" style="margin:0">정기직무교육 · 응급간호술기 · 주제별 술기 · 전담간호사 직무교육 · 선임간호사 교육 · 파트장 교육 · 부서이동자 교육 · 부서별 특성화 교육 (조회 조건 반영)</p></div></div>
     <div class="tw" style="margin-top:10px"><table><thead><tr><th>월</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
-    <p class="note" style="margin-top:8px">연인원: 교육 참석 건수의 합입니다.</p></section>`;
+    <p class="note" style="margin-top:8px">참석인원: 교육 참석 건수의 합입니다.</p></section>`;
 }
 // ---- P2 helpers: 월별·구분별 / 구분별·직위별 표 (부서이동자·부서별 특성화 교육 제외) ----
 const share = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '–';
@@ -683,7 +682,7 @@ function monthKeyTable(at, sel) {
   const rt = m => sum(sel, k => o[m]?.[k] || 0);
   const body = months.map(m => `<tr><th>${ml(m)}</th>${sel.map(k => { const n = o[m]?.[k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? fmt(n) : '·'}</td>`; }).join('')}<td class="num tot ${rt(m) ? '' : 'zero'}">${rt(m) ? fmt(rt(m)) : '·'}</td></tr>`).join('');
   const foot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(sum(months, m => o[m]?.[k] || 0))}</td>`).join('')}<td class="num tot">${fmt(sum(months, rt))}</td></tr>`;
-  return `<section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준 · 부서이동자 교육·부서별 특성화 교육은 제외</p>
+  return `<section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석인원 기준 · 부서이동자 교육·부서별 특성화 교육은 제외</p>
     <div class="tw"><table><thead><tr><th>월</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div></section>`;
 }
 function posKeyTable(at, sel) {
@@ -694,7 +693,7 @@ function posKeyTable(at, sel) {
   const rows = POS.map((p, i) => ({ p, i, t: sum(sel, k => cell[i][k] || 0) })).filter(r => r.t);
   const body = rows.map(r => `<tr><th>${esc(r.p)}</th>${sel.map(k => { const n = cell[r.i][k] || 0; return `<td class="num ${n ? '' : 'zero'}">${n ? `${fmt(n)} <span class="note">(${share(n, colT[k])})</span>` : '·'}</td>`; }).join('')}<td class="num tot">${fmt(r.t)} <span class="note">(${share(r.t, known)})</span></td></tr>`).join('');
   const foot = `<tr class="sum"><th>합계</th>${sel.map(k => `<td class="num">${fmt(colT[k] || 0)}</td>`).join('')}<td class="num tot">${fmt(known)}</td></tr>`;
-  return `<section class="card"><h2>교육 구분별 직위별 참석 현황</h2><p class="hint">참석 연인원 기준 · 괄호는 해당 교육 구분(세로) 안에서 각 직위가 차지하는 비율${unkT ? ` · 시트1 미반영 교육의 ${fmt(unkT)}명은 직위를 알 수 없어 제외` : ''}</p>
+  return `<section class="card"><h2>교육 구분별 직위별 참석 현황</h2><p class="hint">참석인원 기준 · 괄호는 해당 교육 구분(세로) 안에서 각 직위가 차지하는 비율${unkT ? ` · 시트1 미반영 교육의 ${fmt(unkT)}명은 직위를 알 수 없어 제외` : ''}</p>
     <div class="tw"><table><thead><tr><th>직위</th>${head}<th class="tot">합계</th></tr></thead><tbody>${body || `<tr><td colspan="${sel.length + 2}" class="msg">참석 데이터 없음</td></tr>`}</tbody><tfoot>${foot}</tfoot></table></div></section>`;
 }
 // ---- P2 ----
@@ -717,13 +716,12 @@ function p2() {
   </div></div>
   <div class="kpis">
     <div class="kpi"><div class="lab">실시 / 계획</div><div class="val">${done.length}<small>/ ${ss.length}회</small></div><div class="sub">실시율 ${ss.length ? Math.round(done.length / ss.length * 100) : 0}%</div></div>
-    <div class="kpi"><div class="lab">참석 연인원</div><div class="val">${fmt(at.length)}<small>명</small></div><div class="sub">회당 평균 ${done.length ? (at.length / done.length).toFixed(1) : '–'}명</div></div>
-    <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(uniq(at))}<small>명</small></div><div class="sub">중복 제거</div></div>
+    <div class="kpi"><div class="lab">참석인원</div><div class="val">${fmt(at.length)}<small>명</small></div><div class="sub">회당 평균 ${done.length ? (at.length / done.length).toFixed(1) : '–'}명</div></div>
     <div class="kpi"><div class="lab">예정</div><div class="val">${ss.filter(s => s.st === 'plan').length}<small>회</small></div><div class="sub">${ss.filter(s => s.st !== 'done' && s.st !== 'plan' && s.st !== 'none').length ? '집계 필요 ' + ss.filter(s => s.st !== 'done' && s.st !== 'plan' && s.st !== 'none').length + '회' : '미집계 없음'}</div></div>
   </div>
-  <section class="card"><h2>월별 참석 연인원${S.k === 'all' ? '' : ' · ' + KN[S.k]}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S.k === 'all' ? legend(KEYS) : ''}${stackChart(rangeMonths(), monthData(at, sel), sel, 220, innerWidth <= 820 ? chartW(640) : Math.max(560, ($('#view').clientWidth - 40) || 640))}</section>
+  <section class="card"><h2>월별 참석인원${S.k === 'all' ? '' : ' · ' + KN[S.k]}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S.k === 'all' ? legend(KEYS) : ''}${stackChart(rangeMonths(), monthData(at, sel), sel, 220, innerWidth <= 820 ? chartW(640) : Math.max(560, ($('#view').clientWidth - 40) || 640))}</section>
   ${monthKeyTable(at, sel)}
-  <section class="card"><h2>직위별 참석</h2><p class="hint">참석 연인원 기준 · 전체 비율</p>
+  <section class="card"><h2>직위별 참석</h2><p class="hint">참석인원 기준 · 전체 비율</p>
     <div class="mini pos">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pmax * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">데이터 없음</span>'}</div></section>
   ${posKeyTable(at, sel)}
   <section class="card"><div class="tools"><div><h2>교육 목록</h2><p class="hint" style="margin:0">행을 누르면 부서·직위별 참석을 볼 수 있습니다 · 참석 인원은 교육·사번 중복을 제거한 값입니다</p></div>
@@ -749,7 +747,7 @@ function courses7(sel) {
     return a.d.localeCompare(b.d) || a.t.localeCompare(b.t, 'ko');
   });
 }
-// 업무보고용: 같은 교육주제를 한 줄로 묶어 회차·참석 인원(연인원 합)·교육일시를 정리
+// 업무보고용: 같은 교육주제를 한 줄로 묶어 회차·참석 인원의 합·교육일시를 정리
 function report7(list) {
   const m = new Map();
   (list || []).forEach(c => { const o = m.get(c.t) || m.set(c.t, {t: c.t, k: c.k, n: 0, dates: new Set()}).get(c.t); o.n += c.n; o.dates.add(c.d); });
@@ -802,7 +800,7 @@ function p7() {
   const pplRow = c => `<tr class="exp"><td colspan="5" style="padding:8px 14px 12px 34px;white-space:normal"><div class="tw" style="max-height:none;border:1px solid var(--line)"><table><thead><tr><th>성명</th><th>사번</th><th>부서</th><th>직위</th></tr></thead><tbody>${pplRows(c).map(x => `<tr><td>${esc(x.nm)}</td><td>${esc(x.sb)}</td><td>${esc(x.di >= 0 ? DEPTS[x.di] : '부서 미확인')}</td><td>${esc(x.pi >= 0 ? POS[x.pi] : '–')}</td></tr>`).join('')}</tbody></table></div></td></tr>`;
   const courseRow = c => `<tr data-ck="${esc(c.key)}" style="cursor:pointer" title="누르면 참석자 명단을 펼칩니다"><td class="r"><span class="note">${S7.open.has(c.key) ? '▾' : '▸'}</span> ${md(c.d)}</td><td><span class="kc" ${cvar(c.k)}><i></i>${esc(KXN[c.k])}</span></td><td>${esc(c.t)}</td><td class="r num"><b>${fmt(c.n)}</b></td><td style="white-space:normal" title="${esc(courseDepts(c).map(([d, n]) => d + ' ' + n).join(' · '))}">${(() => { const a = courseDepts(c); return esc(a.slice(0, 3).map(([d, n]) => d + ' ' + n).join(' · ')) + (a.length > 3 ? ` <span class="note">외 ${a.length - 3}개</span>` : ''); })()}</td></tr>` + (S7.open.has(c.key) ? pplRow(c) : '');
   const rp = courses ? report7(courses) : [];
-  const repSec = () => `<section class="card" id="courses7"><div class="tools"><div><h2>업무보고용 · 교육주제별 현황</h2><p class="hint" style="margin:0">같은 교육주제를 한 줄로 묶었습니다 · 참석 인원은 회차별 참석 인원(연인원)의 합입니다 · ${esc(filterSummary().split(' · ').slice(0, 2).join(' · '))}</p></div>
+  const repSec = () => `<section class="card" id="courses7"><div class="tools"><div><h2>업무보고용 · 교육주제별 현황</h2><p class="hint" style="margin:0">같은 교육주제를 한 줄로 묶었습니다 · 참석 인원은 회차별 참석 인원의 합입니다 · ${esc(filterSummary().split(' · ').slice(0, 2).join(' · '))}</p></div>
       <div class="nop" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a7="list">목록으로</button><button class="btn" data-a7="xlr">엑셀 저장</button><button class="btn" data-a7="prc">인쇄</button><button class="btn" data-a7="pdfc" title="인쇄 창에서 대상을 'PDF로 저장'으로 고르세요">PDF 저장</button></div></div>
       <div class="tw tl" style="margin-top:10px"><table><thead><tr><th>교육주제</th><th class="r">교육회차</th><th class="r">참석 인원</th><th>교육일시</th></tr></thead><tbody>${rp.map(o => `<tr><td style="white-space:normal">${esc(o.t)}</td><td class="r num">${fmt(o.cnt)}회</td><td class="r num"><b>${fmt(o.n)}</b></td><td style="white-space:normal">${esc(dateList7(o))}</td></tr>`).join('') || '<tr><td colspan="4">해당 교육이 없습니다</td></tr>'}</tbody><tfoot><tr class="sum"><th>합계 (${fmt(rp.length)}개 주제)</th><td class="r num">${fmt(sum(rp, o => o.cnt))}회</td><td class="r num"><b>${fmt(sum(rp, o => o.n))}</b></td><td></td></tr></tfoot></table></div></section>`;
   const courseSec = courses && S7.rep ? repSec() : courses
@@ -817,16 +815,15 @@ function p7() {
   </div></div>
   <div class="kpis">
     <div class="kpi"><div class="lab">교육 횟수</div><div class="val">${courses ? fmt(courses.length) : '–'}<small>${courses ? '회' : ''}</small></div><div class="sub">${courses ? '시트1 반영 교육 기준' : '관리자 로그인에서 표시'}</div></div>
-    <div class="kpi"><div class="lab">참석 연인원</div><div class="val">${fmt(at.length)}<small>명</small></div><div class="sub">${courses && courses.length ? `회당 평균 ${(at.length / courses.length).toFixed(1)}명` : '&nbsp;'}</div></div>
-    <div class="kpi"><div class="lab">참석 실인원</div><div class="val">${fmt(real)}<small>명</small></div><div class="sub">중복 제거</div></div>
+    <div class="kpi"><div class="lab">참석인원</div><div class="val">${fmt(at.length)}<small>명</small></div><div class="sub">${courses && courses.length ? `회당 평균 ${(at.length / courses.length).toFixed(1)}명` : '&nbsp;'}</div></div>
     <div class="kpi"><div class="lab">참여 부서</div><div class="val">${fmt(deptN)}<small>개</small></div><div class="sub">부서 확인된 참석 기준</div></div>
   </div>
   <div class="grid2" style="align-items:start">
-  <section class="card"><h2>월별 참석 연인원${S7.k === 'all' ? '' : ' · ' + esc(KXN[S7.k])}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S7.k === 'all' ? legend(KX) : ''}${stackChart(months, o, sel, 220, innerWidth <= 820 ? chartW(640) : Math.max(380, Math.round((($('#view').clientWidth - 54) * 0.583) - 44) || 440))}</section>
-  <section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석 연인원 기준</p>
+  <section class="card"><h2>월별 참석인원${S7.k === 'all' ? '' : ' · ' + esc(KXN[S7.k])}</h2><p class="hint">막대를 누르면 값이 표시됩니다</p>${S7.k === 'all' ? legend(KX) : ''}${stackChart(months, o, sel, 220, innerWidth <= 820 ? chartW(640) : Math.max(380, Math.round((($('#view').clientWidth - 54) * 0.583) - 44) || 440))}</section>
+  <section class="card"><h2>월별 교육 구분별 참석 인원</h2><p class="hint">참석인원 기준</p>
     <div class="tw"><table><thead><tr><th>월</th>${mHead}<th class="tot">합계</th></tr></thead><tbody>${mBody}</tbody><tfoot>${mFoot}</tfoot></table></div></section>
   </div>
-  <section class="card"><div class="tools"><div><h2>부서별 참석현황</h2><p class="hint" style="margin:0">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 2개 교육에 참석하면 2입니다.</p></div>
+  <section class="card"><div class="tools"><div><h2>부서별 참석현황</h2><p class="hint" style="margin:0">참석인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 2개 교육에 참석하면 2입니다.</p></div>
     <div class="nop" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a7="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 고르세요">PDF 저장</button></div></div>
     <div class="tw" style="margin-top:10px"><table><thead><tr><th>부서</th>${dHead}<th class="tot">합계</th></tr></thead><tbody>${dBody}${dFoot}</tbody></table></div>
     ${dUnkT ? `<p class="note">* 부서 미확인: 시트1 참석자 명단은 ${esc(D.checks.s1max || '')}까지만 들어 있어, 그 이후 교육은 시트2의 참석 인원만 반영했습니다(부서·직위 구분 불가).</p>` : ''}</section>
@@ -906,9 +903,9 @@ function matrix() {
   return {cells, totals, colSum, allTot, unk, unkTot};
 }
 // ---- P3 정렬·분석 ----
-const S3 = {sort: [], asort: [], m: 'n'}; // 순위 기준(칩): n 연인원 / per 인당 참석 횟수 / cov 참석 구분 수
+const S3 = {sort: [], asort: [], m: 'n'}; // 순위 기준(칩): n 참석인원 / per 인당 참석 횟수 / cov 참석 구분 수
 const ANA_EXCL = ['간호국', '간호교육팀', '기타']; // 분석(순위) 대상이 아닌 지원 부서
-const S3M = {n: '참석 연인원', u: '참석 실인원', per: '인당 참석 횟수', cov: '참석 구분 수'};
+const S3M = {n: '참석인원', per: '인당 참석 횟수', cov: '참석 구분 수'};
 function sortMark3(list, c) {
   const i = list.findIndex(k => k.c === c), k = list[i];
   return k ? `<span class="sk">${k.dir > 0 ? '▲' : '▼'}${list.length > 1 ? `<sup>${i + 1}</sup>` : ''}</span>` : '<span class="sk off">⇅</span>';
@@ -959,7 +956,7 @@ function anaSummary3(A) {
   const withU = A.rows.filter(r => r.u).sort((a, b) => b.per - a.per), pb = withU[0], pw = withU[withU.length - 1];
   const low = A.rows.filter(r => r.n < A.avg * 0.5);
   const lines = [
-    `참석 연인원이 가장 많은 부서는 <b>${esc(best.d)}</b>(${fmt(best.n)}명), 가장 적은 부서는 <b>${esc(worst.d)}</b>(${fmt(worst.n)}명)입니다. 부서 평균은 ${A.avg.toFixed(1)}명입니다.`,
+    `참석인원이 가장 많은 부서는 <b>${esc(best.d)}</b>(${fmt(best.n)}명), 가장 적은 부서는 <b>${esc(worst.d)}</b>(${fmt(worst.n)}명)입니다. 부서 평균은 ${A.avg.toFixed(1)}명입니다.`,
     low.length ? `평균의 50% 미만인 부서는 <b>${low.length}곳</b>입니다: ${esc(low.slice(0, 8).map(r => r.d).join(', '))}${low.length > 8 ? ' 외' : ''}.` : '평균의 50% 미만인 부서는 없습니다.'
   ];
   if (pb && pw && pb !== pw) lines.push(`인당 참석 횟수는 <b>${esc(pb.d)}</b>가 ${pb.per.toFixed(2)}회로 가장 높고 <b>${esc(pw.d)}</b>가 ${pw.per.toFixed(2)}회로 가장 낮습니다.`);
@@ -975,7 +972,7 @@ function anaSec3() {
   const keys = S3.asort.length ? S3.asort : [{c: 'rank', dir: 1}];
   const g = {rank: r => r.rank, d: r => r.i, n: r => r.n, u: r => r.u, per: r => r.per, share: r => r.share, cov: r => r.cov, reg: r => r.reg, rel: r => r.rel};
   const list = A.rows.slice().sort((a, b) => { for (const k of keys) { const x = g[k.c](a) - g[k.c](b); if (x) return x * k.dir; } return a.rank - b.rank; });
-  const tr = r => `<tr><td class="num">${r.rank}</td><th>${esc(r.d)}</th><td class="num">${fmt(r.n)}</td><td class="num">${fmt(r.u)}</td><td class="num">${r.u ? r.per.toFixed(2) : '–'}</td><td class="num">${r.share.toFixed(1)}%</td><td class="num">${r.cov}/${A.nk}</td><td class="num">${fmt(r.reg)}</td><td class="num">${r.rel.toFixed(0)}%</td><td style="white-space:normal;text-align:left">${anaTags3(r, A.nk, A.rows.length)}</td></tr>`;
+  const tr = r => `<tr><td class="num">${r.rank}</td><th>${esc(r.d)}</th><td class="num">${fmt(r.n)}</td><td class="num">${r.u ? r.per.toFixed(2) : '–'}</td><td class="num">${r.share.toFixed(1)}%</td><td class="num">${r.cov}/${A.nk}</td><td class="num">${fmt(r.reg)}</td><td class="num">${r.rel.toFixed(0)}%</td><td style="white-space:normal;text-align:left">${anaTags3(r, A.nk, A.rows.length)}</td></tr>`;
   const mchip = k => `<button class="chip" data-m3="${k}" aria-pressed="${m === k}">${S3M[k]}</button>`;
   return `<section class="card" id="ana3" style="margin-top:0">
     <div class="tools"><div><h2>부서별 참석 분석</h2><p class="hint" style="margin:0">위 조회 조건(기준일시·교육 종류·부서)이 그대로 적용됩니다 · 간호국·간호교육팀·기타는 순위에서 제외</p></div>
@@ -983,14 +980,14 @@ function anaSec3() {
     <div class="callout" style="margin-top:10px"><b>한눈에 보기</b><ul class="plain" style="margin:6px 0 0">${anaSummary3(A)}</ul></div>
     <div class="grid2" style="margin-top:14px;align-items:start">
       <div>
-        <p class="hint">부서별 ${esc(S3M[m])} · <span style="color:var(--accent)">■</span> 상위 3 <span style="color:#f59e0b">■</span> 하위 3 · 부서 평균 연인원 ${A.avg.toFixed(1)}명</p>
+        <p class="hint">부서별 ${esc(S3M[m])} · <span style="color:var(--accent)">■</span> 상위 3 <span style="color:#f59e0b">■</span> 하위 3 · 부서 평균 참석인원 ${A.avg.toFixed(1)}명</p>
         <div class="mini pos">${ranked.map(bar).join('')}</div>
       </div>
       <div class="note" style="line-height:1.7"><b style="color:var(--ink2)">지표 설명</b><br>
-        · <b>연인원</b>: 한 교육에 한 번 참석하면 1<br>· <b>실인원</b>: 중복을 뺀 참석 직원 수<br>· <b>인당 참석 횟수</b>: 연인원 ÷ 실인원(교육을 얼마나 꾸준히 받았는지)<br>· <b>참석 구분 수</b>: 6개 구분 중 한 번이라도 참석한 구분 수<br>· <b>평균 대비</b>: 부서 연인원 ÷ 부서 평균<br><br>
+        · <b>참석인원</b>: 한 교육에 한 번 참석하면 1<br>· <b>인당 참석 횟수</b>: 참석인원 ÷ 참석한 직원 수(교육을 얼마나 꾸준히 받았는지)<br>· <b>참석 구분 수</b>: 6개 구분 중 한 번이라도 참석한 구분 수<br>· <b>평균 대비</b>: 부서 참석인원 ÷ 부서 평균<br><br>
         ※ 부서 규모(재직 인원)가 반영되지 않은 수치라 큰 부서가 높게 나옵니다. <b>참석률(%)</b> 비교는 부서별 재직 인원 자료가 있어야 정확히 계산할 수 있습니다.</div>
     </div>
-    <div class="tw" style="margin-top:14px"><table><thead><tr>${sortTh3('rank', '순위', '', 'a')}${sortTh3('d', '부서', '', 'a')}${sortTh3('n', '연인원', '', 'a')}${sortTh3('u', '실인원', '', 'a')}${sortTh3('per', '인당 참석 횟수', '', 'a')}${sortTh3('share', '전체 대비 비중', '', 'a')}${sortTh3('cov', '참석 구분 수', '', 'a')}${sortTh3('reg', '정기직무교육', '', 'a')}${sortTh3('rel', '평균 대비', '', 'a')}<th style="text-align:left">비고</th></tr></thead><tbody>${list.map(tr).join('')}</tbody></table></div>
+    <div class="tw" style="margin-top:14px"><table><thead><tr>${sortTh3('rank', '순위', '', 'a')}${sortTh3('d', '부서', '', 'a')}${sortTh3('n', '참석인원', '', 'a')}${sortTh3('per', '인당 참석 횟수', '', 'a')}${sortTh3('share', '전체 대비 비중', '', 'a')}${sortTh3('cov', '참석 구분 수', '', 'a')}${sortTh3('reg', '정기직무교육', '', 'a')}${sortTh3('rel', '평균 대비', '', 'a')}<th style="text-align:left">비고</th></tr></thead><tbody>${list.map(tr).join('')}</tbody></table></div>
   </section>`;
 }
 async function exportAna3() {
@@ -999,9 +996,9 @@ async function exportAna3() {
     const X = await loadXLSX(), wb = X.utils.book_new();
     const plain = h => h.replace(/<[^>]+>/g, '');
     const lines = anaSummary3(A).split('</li>').map(x => plain(x).trim()).filter(Boolean);
-    const rows = A.rows.slice().sort((a, b) => a.rank - b.rank).map(r => [r.rank, r.d, r.n, r.u, r.u ? +r.per.toFixed(2) : '', +r.share.toFixed(1), `${r.cov}/${A.nk}`, r.reg, +r.rel.toFixed(0), plain(anaTags3(r, A.nk, A.rows.length)).replace(/\s+/g, ' ')]);
-    const ws = X.utils.aoa_to_sheet([[`부서별 직무교육 참석 분석 · ${filterSummary()}`], ...lines.map(x => [x]), [], ['순위', '부서', '연인원', '실인원', '인당 참석 횟수', '전체 대비 비중(%)', '참석 구분 수', '정기직무교육', '평균 대비(%)', '비고'], ...rows]);
-    ws['!cols'] = [{wch: 6}, {wch: 14}, {wch: 10}, {wch: 10}, {wch: 14}, {wch: 16}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 36}];
+    const rows = A.rows.slice().sort((a, b) => a.rank - b.rank).map(r => [r.rank, r.d, r.n, r.u ? +r.per.toFixed(2) : '', +r.share.toFixed(1), `${r.cov}/${A.nk}`, r.reg, +r.rel.toFixed(0), plain(anaTags3(r, A.nk, A.rows.length)).replace(/\s+/g, ' ')]);
+    const ws = X.utils.aoa_to_sheet([[`부서별 직무교육 참석 분석 · ${filterSummary()}`], ...lines.map(x => [x]), [], ['순위', '부서', '참석인원', '인당 참석 횟수', '전체 대비 비중(%)', '참석 구분 수', '정기직무교육', '평균 대비(%)', '비고'], ...rows]);
+    ws['!cols'] = [{wch: 6}, {wch: 14}, {wch: 10}, {wch: 14}, {wch: 16}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 36}];
     X.utils.book_append_sheet(wb, ws, '부서별 분석');
     X.writeFile(wb, ('부서별_참석분석_' + filterSummary().split(' · ').slice(0, 2).join('_') + '.xlsx').replace(/[\\/:*?"<>|]/g, ''));
   } catch (e) { alert(e.message || e); }
@@ -1011,13 +1008,13 @@ function top5Sec3(A) {
   const high = A.ranked.slice(0, 5), low = A.ranked.slice(-5).reverse();
   const mx = Math.max(1e-9, ...A.ranked.map(r => r[m]));
   const val = r => m === 'per' ? r.per.toFixed(2) + '회' : m === 'cov' ? `${r.cov}/${nk}` : fmt(r[m]) + '명';
-  const sub = r => m === 'n' ? `실인원 ${fmt(r.u)}명` : m === 'u' ? `연인원 ${fmt(r.n)}명` : m === 'per' ? `${fmt(r.n)}/${fmt(r.u)}명` : `연인원 ${fmt(r.n)}명`;
-  const tip = r => `${r.d}${grp(r) ? ' (' + grp(r) + ')' : ''}\n연인원 ${fmt(r.n)}명 · 실인원 ${fmt(r.u)}명\n인당 ${r.u ? r.per.toFixed(2) : '–'}회 · 평균 대비 ${r.rel.toFixed(0)}%`.replace(/\n/g, ' / ');
+  const sub = r => m === 'n' ? `참석 구분 ${r.cov}/${nk}` : `참석인원 ${fmt(r.n)}명`;
+  const tip = r => `${r.d}${grp(r) ? ' (' + grp(r) + ')' : ''}\n참석인원 ${fmt(r.n)}명\n인당 ${r.u ? r.per.toFixed(2) : '–'}회 · 평균 대비 ${r.rel.toFixed(0)}%`.replace(/\n/g, ' / ');
   const row = (r, i, color, soft) => `<div class="rk" data-tip="${esc(tip(r))}"><span class="rkb" style="background:${i < 3 ? color : soft}">${i + 1}</span><b class="rkn">${esc(r.d)}</b><span class="rkg">${esc(grp(r))}</span><span class="rkbar"><i style="width:${Math.max(r[m] > 0 ? 2 : 0, r[m] / mx * 100)}%;background:${color}"></i></span><b class="rkv num">${val(r)}</b><span class="rks num">${sub(r)}</span></div>`;
   const chip = k => `<button class="chip" data-m3="${k}" aria-pressed="${m === k}">${S3M[k]}</button>`;
   return `<section class="card" id="top3" style="margin-top:0">
     <div class="tools"><div><h2>부서별 참석 순위</h2><p class="hint" style="margin:0">${esc(S3M[m])} 기준 · 부서 ${A.rows.length}곳(간호국·간호교육팀·기타 제외) · 위 조회 조건이 적용됩니다 · 부서에 마우스를 올리면 상세가 표시됩니다</p></div>
-      <div class="seg nop"><span class="gl">순위 기준</span>${Object.keys(S3M).filter(k => k !== 'u').map(chip).join('')}</div></div>
+      <div class="seg nop"><span class="gl">순위 기준</span>${Object.keys(S3M).map(chip).join('')}</div></div>
     <div class="grid2e" style="margin-top:12px">
       <div class="rkcard"><div class="rkh"><span class="dotc" style="background:var(--accent)"></span>${esc(S3M[m])} 높은 부서 TOP 5</div>${high.map((r, i) => row(r, i, 'var(--accent)', '#7fa6ee')).join('')}</div>
       <div class="rkcard"><div class="rkh"><span class="dotc" style="background:#f59e0b"></span>${esc(S3M[m])} 낮은 부서 TOP 5</div>${low.map((r, i) => row(r, i, '#f59e0b', '#f7c46c')).join('')}</div>
@@ -1048,9 +1045,9 @@ function p3() {
   const own = S.mgr && !S.mgr.all; // 간호단위 파트장(본인 부서만)
   const pdt = new Date(), pnow = `${pdt.getFullYear()}-${String(pdt.getMonth() + 1).padStart(2, '0')}-${String(pdt.getDate()).padStart(2, '0')} ${String(pdt.getHours()).padStart(2, '0')}:${String(pdt.getMinutes()).padStart(2, '0')}`;
   return `
-  <div class="phdr"><b>${own ? esc(mgrLabel()) + ' 간호단위' : '부서별 직무교육 참석현황'}</b> · 조회 조건 ${esc(filterSummary())} · 데이터 기준 ${esc(D.checks && D.checks.s1max > D.asof ? D.checks.s1max : D.asof)} (시트 갱신 ${esc(D.built || D.updated)}) · 출력 ${pnow}${S.mgr ? ' · ' + esc(S.mgr.name) : ''}<br>인제대학교 해운대백병원 간호국 간호교육팀 · 참석 연인원 기준(한 교육에 한 번 참석하면 1)</div>
+  <div class="phdr"><b>${own ? esc(mgrLabel()) + ' 간호단위' : '부서별 직무교육 참석현황'}</b> · 조회 조건 ${esc(filterSummary())} · 데이터 기준 ${esc(D.checks && D.checks.s1max > D.asof ? D.checks.s1max : D.asof)} (시트 갱신 ${esc(D.built || D.updated)}) · 출력 ${pnow}${S.mgr ? ' · ' + esc(S.mgr.name) : ''}<br>인제대학교 해운대백병원 간호국 간호교육팀 · 참석인원 기준(한 교육에 한 번 참석하면 1)</div>
   <div class="card tools nop" style="justify-content:flex-end">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="note">참석 연인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="note">참석인원 기준 · 한 교육에 한 번 참석하면 1로 셉니다. 같은 사람이 3개 교육에 참석하면 3입니다.</span><button class="btn" id="xl">엑셀 저장</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button>${S.admin ? '<button class="btn" id="roster">참석자 명단 엑셀</button>' : ''}</div>
   </div>
   <div class="tw"><table><thead><tr>${sortTh3('d', '부서')}${head}<th class="sortable tot" data-s3="t" title="누르면 정렬합니다 (Shift+클릭: 추가 기준)">합계${sortMark3(S3.sort, 't')}</th></tr></thead><tbody>${body}${foot}</tbody></table></div>
   ${own ? '' : unkNote}
@@ -1064,7 +1061,7 @@ function deptPanel(i) {
   const posRows = POS.map((p, pi) => ({p, n: at.filter(a => a.pi === pi).length})).filter(x => x.n);
   const mx = Math.max(1, ...byK.map(x => x.n)), pm = Math.max(1, ...posRows.map(x => x.n));
   return `<section class="card" id="dp"><div class="tools"><h2>${esc(DEPTS[i])} 상세</h2><button class="btn" id="dclose">닫기</button></div>
-    <p class="hint">참석 연인원 ${fmt(at.length)}명</p>
+    <p class="hint">참석인원 ${fmt(at.length)}명</p>
     <div class="grid2"><div class="mini">${byK.map(x => `<div class="l"><span class="kc" ${cvar(x.k)}><i></i>${KN[x.k]}</span><span class="b"><i style="width:${x.n / mx * 100}%;background:var(--c-${x.k})"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('')}</div>
     <div class="mini">${posRows.map(x => `<div class="l"><span>${esc(x.p)}</span><span class="b"><i style="width:${x.n / pm * 100}%"></i></span><span class="num" style="text-align:right">${fmt(x.n)}</span></div>`).join('') || '<span class="note">참석 데이터 없음</span>'}</div></div></section>`;
 }
@@ -1731,11 +1728,11 @@ function tableRows(metric) {
 async function exportTable() {
   try {
     const X = await loadXLSX(), wb = X.utils.book_new();
-    [['연인원', 'rows']].forEach(([n, m]) => {
+    [['참석인원', 'rows']].forEach(([n, m]) => {
       const ws = X.utils.aoa_to_sheet(tableRows(m)); ws['!cols'] = [{wch:24}, ...KEYS.map(() => ({wch:16})), {wch:10}];
       X.utils.book_append_sheet(wb, ws, n);
     });
-    const info = X.utils.aoa_to_sheet([['조회 조건', filterSummary()], ['기준일시', D.updated + ' 갱신'], ['설명', '연인원=교육 참석 횟수의 합']]);
+    const info = X.utils.aoa_to_sheet([['조회 조건', filterSummary()], ['기준일시', D.updated + ' 갱신'], ['설명', '참석인원=교육 참석 횟수의 합']]);
     info['!cols'] = [{wch:12}, {wch:60}]; X.utils.book_append_sheet(wb, info, '조회조건');
     saveWb(X, wb, `부서별_직무교육_참석현황_${condText()}.xlsx`);
   } catch (e) { alert(e.message || e); }
@@ -1752,7 +1749,7 @@ async function exportRoster() {
     const byDept = {}; rows.forEach(r => (byDept[r[5]] ??= []).push(r));
     const dIdx = Object.keys(byDept).map(Number).sort((a, b) => a - b);
     // 요약
-    const sumRows = [['부서', '교육 구분', '참석 연인원']];
+    const sumRows = [['부서', '교육 구분', '참석인원']];
     dIdx.forEach(di => order.forEach(k => {
       const rs = byDept[di].filter(r => r[0] === k); if (!rs.length) return;
       sumRows.push([j.depts[di], nameOf(k), rs.length]);
@@ -1834,7 +1831,7 @@ function mgrSec() {
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="tg" role="group" aria-label="보기"><button data-mv="list" aria-pressed="${S.mv === 'list'}">교육별 명단</button><button data-mv="person" aria-pressed="${S.mv === 'person'}">직원별 요약</button></div>
     <button class="btn pri" id="mgr-xl">명단 엑셀 다운로드</button><button class="btn" data-print>인쇄</button><button class="btn" data-print="pdf" title="인쇄 창에서 대상을 'PDF로 저장'으로 선택하면 PDF 파일로 저장됩니다">PDF 저장</button></div></div>
     <div class="tools" style="margin:10px 0"><input type="search" id="mq" placeholder="이름·사번·교육명 검색" value="${esc(S.mq)}" style="flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line2);border-radius:10px;font-family:inherit;background:var(--surface);color:var(--ink)">
-    <span class="note">참석 연인원 <b>${fmt(rows.length)}</b>건${S.mv === 'person' ? ` · 직원 <b>${fmt(people.length)}</b>명` : ''}${rows.length !== all.length ? ` (검색 전 ${fmt(all.length)}건)` : ''}</span></div>
+    <span class="note">참석인원 <b>${fmt(rows.length)}</b>건${S.mv === 'person' ? ` · 직원 <b>${fmt(people.length)}</b>명` : ''}${rows.length !== all.length ? ` (검색 전 ${fmt(all.length)}건)` : ''}</span></div>
     <div class="tw tl"><table class="rs${S.mv === 'list' ? ' rl' : ''}"><thead>${th}</thead><tbody>${body || `<tr><td colspan="${cols}" class="msg">조회 조건에 해당하는 참석자가 없습니다.</td></tr>`}</tbody></table></div>
     <p class="note" style="margin:8px 0 0">이름·사번이 포함된 개인정보입니다. 내려받은 파일·출력물은 부서 내에서만 사용하고 외부로 공유하지 마세요.</p></section>`;
 }
@@ -1853,7 +1850,7 @@ async function exportMgr() {
     const m = MG(), rows = mgrRows(false); if (!rows.length) { alert('조회 조건에 해당하는 참석자가 없습니다.'); return; }
     const X = await loadXLSX(), wb = X.utils.book_new(), ks = Object.keys(m.keys), people = mgrPeople(rows), multi = m.depts.length > 1;
     const byK = {}; rows.forEach(r => byK[r[0]] = (byK[r[0]] || 0) + 1);
-    const sw = X.utils.aoa_to_sheet([[`${mgrLabel()} 참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ['교육 구분', '참석 연인원'], ...ks.filter(k => byK[k]).map(k => [m.keys[k], byK[k]]), ['합계', rows.length]]); sw['!cols'] = [{wch:26}, {wch:14}];
+    const sw = X.utils.aoa_to_sheet([[`${mgrLabel()} 참석자 명단 · ${filterSummary()} · ${D.updated} 갱신`], [], ['교육 구분', '참석인원'], ...ks.filter(k => byK[k]).map(k => [m.keys[k], byK[k]]), ['합계', rows.length]]); sw['!cols'] = [{wch:26}, {wch:14}];
     X.utils.book_append_sheet(wb, sw, '요약');
     const pw = X.utils.aoa_to_sheet([['성명', '사번', ...(multi ? ['부서'] : []), '직위', ...ks.map(k => m.keys[k]), '합계'], ...people.map(p => [p.name, p.sabun, ...(multi ? [DEPTS[p.di] || ''] : []), m.pos[p.pi] || '', ...ks.map(k => p.by[k] || 0), p.n])]);
     pw['!cols'] = [{wch:10}, {wch:10}, ...(multi ? [{wch:12}] : []), {wch:14}, ...ks.map(() => ({wch:16})), {wch:8}]; pw['!freeze'] = {xSplit:0, ySplit:1};
