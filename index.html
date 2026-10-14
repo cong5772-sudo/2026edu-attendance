@@ -195,7 +195,7 @@ ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)}ul.plain li{margin:4
 .cal9 .cd,.cal9 .cd0{min-height:96px;padding:4px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px;min-width:0}.cal9 .cd0{background:var(--sunk)}
 .cal9 .cd>b{font-size:12px;color:var(--ink2)}.cal9 .cd.su>b{color:#dc2626}.cal9 .cd.sa>b{color:#2563eb}.cal9 .cd.td{background:var(--accent-soft)}
 .ev9{--h:210;display:block;width:100%;text-align:left;border:0;border-left:3px solid hsl(var(--h) 60% 50%);border-radius:4px;background:color-mix(in srgb,hsl(var(--h) 60% 50%) 16%,var(--surface));color:var(--ink);padding:3px 5px;font-size:11.5px;line-height:1.35;cursor:pointer;word-break:keep-all}.ev9 i{font-style:normal;font-weight:700;color:var(--ink2)}
-.cp{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:10.5px;font-weight:600;line-height:1.7;background:var(--sunk);border:1px solid var(--line2)}.cp.ok{color:#15803d}.cp.wn{color:#b45309}.cp.no{color:#b91c1c}.cg9{display:flex;gap:8px;flex-wrap:wrap}.cg9 .cp{margin:0;font-size:12.5px;padding:2px 10px}
+.cp{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:10.5px;font-weight:600;line-height:1.7;background:var(--sunk);border:1px solid var(--line2)}.cp.usr{color:#6d28d9}.cp.ok{color:#15803d}.cp.wn{color:#b45309}.cp.no{color:#b91c1c}.cg9{display:flex;gap:8px;flex-wrap:wrap}.cg9 .cp{margin:0;font-size:12.5px;padding:2px 10px}
 .cal9 .cd{position:relative}.addd9{position:absolute;top:2px;right:3px;width:20px;height:20px;border:0;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:13px;line-height:1;cursor:pointer;opacity:0}.cal9 .cd:hover .addd9,.addd9:focus{opacity:1}@media (hover:none){.addd9{opacity:.65}}
 .ev9.act{background:transparent;border:1px dashed hsl(var(--h) 60% 50%);border-left-width:3px;cursor:pointer}
 .tl9 .kc i{background:hsl(var(--h) 60% 50%)}
@@ -1662,7 +1662,7 @@ function openSession(id) {
 }
 // ---- P9: 교육일정 관리 (포스터 업로드 → AI 읽기 → 확인·저장) · 간호교육팀 + 전체부서접근 계정 ----
 const S9 = {data: null, loading: false, err: '', view: 'cal', month: '', all: false, act: true, X: null, cmp: null, draft: null, edit: null, busy: '', msg: ''};
-const COLS9 = [['g', '구분', 90], ['t', '교육명', 210], ['tg', '대상', 110], ['d', '일자', 104], ['s', '시작', 62], ['e', '종료', 62], ['p', '장소', 110], ['i', '강사', 90], ['n', '비고', 100]];
+const COLS9 = [['g', '구분', 90], ['t', '교육명', 210], ['tg', '대상', 110], ['d', '일자', 104], ['s', '시작', 62], ['e', '종료', 62], ['p', '장소', 110], ['i', '강사', 90], ['n', '비고', 100], ['x', '실시 정보', 110]];
 const api9 = body => api5('POST', {}, {...body, idToken: S5.token ? undefined : (S.mgr && S.mgr.cred)});
 const ym9 = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
 const today9 = () => { const d = new Date(); return ym9() + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -1771,12 +1771,12 @@ function act9(el) {
   if (a === 'next') { S9.month = shift9(S9.month || ym9(), 1); return render(); }
   if (a === 'today') { S9.month = ym9(); return render(); }
   if (a === 'view') { S9.view = v; return render(); }
-  if (a === 'newd') { S9.edit = {id: '', g: '', t: '', tg: '', d: v, s: '', e: '', p: '', i: '', n: ''}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
+  if (a === 'newd') { S9.edit = {id: '', g: '', t: '', tg: '', d: v, s: '', e: '', p: '', i: '', n: '', x: ''}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
   if (a === 'xadd') { const x = S9.X && S9.X.extra[+v]; if (!x) return; S9.edit = {id: '', g: kn9(x.a), t: x.a.s.t, tg: '', d: x.d, s: '', e: '', p: '', i: '', n: '시트 실시 기록에서 추가'}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
   if (a === 'cal') return calSync9();
   if (a === 'act') { S9.act = !S9.act; return render(); }
   if (a === 'all') { S9.all = !S9.all; return render(); }
-  if (a === 'new') { S9.edit = {id: '', g: '', t: '', tg: '', d: (S9.month || ym9()) + '-01', s: '', e: '', p: '', i: '', n: ''}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
+  if (a === 'new') { S9.edit = {id: '', g: '', t: '', tg: '', d: (S9.month || ym9()) + '-01', s: '', e: '', p: '', i: '', n: '', x: ''}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
   if (a === 'edit') { const r = S9.data.rows.find(x => x.id === id); if (r) { S9.edit = {...r}; S9.msg = ''; render(); $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); } return; }
   if (a === 'ecancel') { S9.edit = null; return render(); }
   if (a === 'esave') return esave9();
@@ -1784,7 +1784,7 @@ function act9(el) {
   if (a === 'del') { const r = S9.data.rows.find(x => x.id === id); return del9([id], `「${r ? r.t : ''}」 일정을`); }
   if (a === 'dsave') return save9();
   if (a === 'dcancel') { S9.draft = null; S9.msg = ''; return render(); }
-  if (a === 'dadd') { S9.draft.rows.push({g: '', t: '', tg: '', d: (S9.draft.month || S9.month || ym9()) + '-01', s: '', e: '', p: '', i: '', n: ''}); return render(); }
+  if (a === 'dadd') { S9.draft.rows.push({g: '', t: '', tg: '', d: (S9.draft.month || S9.month || ym9()) + '-01', s: '', e: '', p: '', i: '', n: '', x: ''}); return render(); }
   if (a === 'ddel') { S9.draft.rows.splice(+v, 1); return render(); }
   if (a === 'dview') { const dl = $('#dlg'); $('#dt').textContent = '업로드한 포스터'; document.querySelector('#dlg .dh p').textContent = S9.draft.name || ''; $('#dbody').innerHTML = `<img src="${S9.draft.url}" alt="포스터" style="width:100%;height:auto;border-radius:8px">`; dl.style.width = 'min(900px,96vw)'; dl.addEventListener('close', () => { dl.style.width = ''; }, {once: true}); return dl.showModal(); }
   if (a === 'cmp') return cmp9();
@@ -1832,7 +1832,9 @@ function match9(m, rows) {
   return res;
 }
 const kn9 = a => KN[a.s.k] || ALLN[a.s.k] || a.s.k || '';
+const ovr9 = id => { const r = S9.data && S9.data.rows.find(x => x.id === id); return r && r.x ? r.x : ''; };
 const actTag9 = id => {
+  const o = ovr9(id); if (o) return `<span class="cp ${/미실시|취소|연기|불참|중단/.test(o) ? 'no' : 'usr'}" title="직접 입력한 실시 정보">${esc(o)}</span>`;
   const c = S9.X && S9.X.st[id]; if (!c) return '';
   if (c.st === 'ok') return `<span class="cp ok" title="실제 실시 기록과 일치 · 참석 ${fmt(c.a.s.n1)}명">실시 ${fmt(c.a.s.n1)}명</span>`;
   if (c.st === 'guess') return `<span class="cp ok" title="같은 날짜에 실시된 「${esc(c.a.s.t)}」과 같은 교육으로 판단(교육명이 다름) · 참석 ${fmt(c.a.s.n1)}명">실시 ${fmt(c.a.s.n1)}명 · 명칭 상이</span>`;
@@ -1863,12 +1865,12 @@ function p9() {
   if (!S9.data) return `<div class="callout">교육일정을 불러오는 중…</div>`;
   const m = S9.month || ym9(), all = S9.data.rows.slice().sort((a, b) => a.d.localeCompare(b.d) || a.s.localeCompare(b.s)), inM = all.filter(r => r.d.slice(0, 7) === m);
   const posM = S9.data.posters.filter(p => p.month === m || inM.some(r => r.pid === p.id));
-  const inp = (k, v, w, cls) => `<input class="i9${cls ? ' ' + cls : ''}" style="min-width:${w}px" value="${esc(v)}" ${k}>`;
+  const inp = (k, v, w, cls) => `<input class="i9${cls ? ' ' + cls : ''}" style="min-width:${w}px" value="${esc(v)}" ${/(="x"|:x")/.test(k) ? 'list="x9" placeholder="예: 미실시" ' : ''}${k}>`;
   const draft = S9.draft ? `<section class="card" id="dr9"><div class="tools"><div><h2>AI가 읽은 일정 확인 <small>${S9.draft.rows.length}건${S9.draft.month ? ' · ' + esc(S9.draft.month) : ''}</small></h2><p class="hint" style="margin:0">포스터와 비교하며 잘못 읽은 칸을 고친 뒤 저장하세요. 빨간 칸은 비었거나 일자 형식(2026-10-07)이 아닙니다. 저장하면 포스터 사진도 함께 보관됩니다.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-a9="dview">포스터 보기</button><button class="btn" data-a9="dadd">행 추가</button><button class="btn" data-a9="dcancel">취소</button><button class="btn pri" data-a9="dsave">${S9.draft.rows.length}건 저장</button></div></div>
       <div class="tw" style="max-height:none;margin-top:12px"><table class="tl9"><thead><tr>${COLS9.map(c => `<th>${c[1]}</th>`).join('')}<th></th></tr></thead><tbody>${S9.draft.rows.map((r, i) => `<tr>${COLS9.map(c => `<td>${inp(`data-d9="${i}:${c[0]}"`, r[c[0]], c[2], (c[0] === 't' && !String(r.t || '').trim()) || (c[0] === 'd' && !dOK9(r.d)) ? 'bad' : '')}</td>`).join('')}<td><button class="btn" data-a9="ddel" data-v="${i}" title="이 행 빼기">✕</button></td></tr>`).join('')}</tbody></table></div></section>` : '';
   const E = S9.edit, edit = E ? `<section class="card" id="ed9"><h2>${E.id ? '일정 수정' : '일정 추가'}</h2><div class="ef9">${COLS9.map(c => `<label><span>${c[1]}${c[0] === 't' || c[0] === 'd' ? ' *' : ''}</span>${inp(`data-e9="${c[0]}"`, E[c[0]], 0, (c[0] === 't' && !String(E.t || '').trim()) || (c[0] === 'd' && !dOK9(E.d)) ? 'bad' : '')}</label>`).join('')}</div>
-      <p class="hint" style="margin:10px 0 0">일자는 2026-10-07 형식, 시간은 14:00 형식으로 적습니다.</p>
+      <p class="hint" style="margin:10px 0 0">일자는 2026-10-07 형식, 시간은 14:00 형식으로 적습니다. 「실시 정보」에 적은 내용(예: 미실시, 연기)은 자동 판정 대신 달력·목록에 그대로 표시됩니다. 비우면 시트 기록과 자동 대조한 결과가 표시됩니다.</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn pri" data-a9="esave">저장</button><button class="btn" data-a9="ecancel">취소</button>${E.id ? '<button class="btn" data-a9="edel">삭제</button>' : ''}</div></section>` : '';
   let cmp = '';
   if (S9.cmp && S9.cmp.items) {
@@ -1885,9 +1887,9 @@ function p9() {
       <div style="margin-top:12px">${S9.view === 'cal' ? cal9(inM, m) : list9(shown)}</div></section>`;
   let actCard = '';
   if (S9.X) {
-    const X = S9.X, L = Object.entries(X.st), c = k => L.filter(([, v]) => v.st === k).length, tr = (a, rows) => rows.length ? `<div class="tw" style="max-height:none;margin-bottom:10px"><table class="tl9"><thead><tr>${a}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` : '';
+    const X = S9.X, L = Object.entries(X.st), c = k => L.filter(([id, v]) => v.st === k && !(byId[id] && byId[id].x)).length, tr = (a, rows) => rows.length ? `<div class="tw" style="max-height:none;margin-bottom:10px"><table class="tl9"><thead><tr>${a}</tr></thead><tbody>${rows.join('')}</tbody></table></div>` : '';
     const byId = Object.fromEntries(inM.map(r => [r.id, r]));
-    const gs = L.filter(([, v]) => v.st === 'guess').map(([id, v]) => [byId[id], v]), noRec = L.filter(([, v]) => v.st === 'none').map(([id]) => byId[id]).filter(Boolean), near = L.filter(([, v]) => v.st === 'near').map(([id, v]) => [byId[id], v]);
+    const gs = L.filter(([, v]) => v.st === 'guess').map(([id, v]) => [byId[id], v]), noRec = L.filter(([, v]) => v.st === 'none').map(([id]) => byId[id]).filter(r => r && !r.x), near = L.filter(([, v]) => v.st === 'near').map(([id, v]) => [byId[id], v]);
     actCard = `<section class="card"><h2>실제 실시 교육 대조 <small>${esc(m)}</small></h2><p class="hint">시트(참석 명단)에서 분류된 교육과 포스터 일정을 비교합니다. 같은 날짜이고 교육명이 비슷하면 같은 교육으로 봅니다. 부서이동자·부서별 특성화 교육은 교육명이 없어 제외됩니다.</p>
       <div class="cg9"><span class="cp ok">일치 ${c('ok') + c('guess')}건${c('guess') ? ` (교육명 상이 ${c('guess')}건 포함)` : ''}</span><span class="cp wn">날짜 다름 ${c('near')}건</span><span class="cp no">기록 없음 ${c('none')}건</span><span class="cp no">포스터에 없는 실시 ${X.extra.length}건</span><span class="note">이 달 실시 기록 ${X.n}건</span></div>
       <div style="margin-top:12px">${X.extra.length ? '<p class="hint" style="margin:0 0 6px">포스터 일정에는 없지만 실제 실시된 교육</p>' + tr('<th>일자</th><th>구분</th><th>교육명</th><th>참석</th>', X.extra.map(x => `<tr><td class="nw">${esc(x.d.slice(5))} (${wd9(x.d)})</td><td>${esc(kn9(x.a))}</td><td>${esc(x.a.s.t)}</td><td class="nw">${fmt(x.a.s.n1)}명</td></tr>`)) : ''}
@@ -1899,7 +1901,7 @@ function p9() {
   const post = `<section class="card"><h2>보관한 포스터 <small>${S9.data.posters.length}장</small></h2>${S9.data.posters.length ? `<div class="tw" style="max-height:none"><table class="tl9"><thead><tr><th>월</th><th>파일</th><th>일정</th><th>등록</th><th></th></tr></thead><tbody>${S9.data.posters.slice().sort((a, b) => b.month.localeCompare(a.month)).map(p => `<tr><td class="nw">${esc(p.month)}</td><td>${esc(p.name)}</td><td class="nw">${cnt(p.id)}건</td><td class="nw">${esc(p.by)} · ${esc(p.at)}</td><td class="nw"><button class="btn" data-a9="pv" data-v="${esc(p.id)}">보기</button> <button class="btn" data-a9="pdel" data-v="${esc(p.id)}">삭제</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="hint" style="margin:0">아직 보관한 포스터가 없습니다.</p>'}</section>`;
   const up = `<section class="card"><h2>포스터 올리기</h2><p class="hint">교육일정 포스터 사진(JPG·PNG)을 올리면 AI가 구분·교육명·대상·일시·장소·강사를 읽어 표로 보여 줍니다. 확인·수정 후 저장하세요.</p>
       <label class="up9" id="dz9"><input type="file" id="f9" accept="image/*" hidden><b>이미지 선택</b> 또는 여기로 끌어다 놓기</label></section>`;
-  return `${S9.busy ? `<div class="callout" style="margin-bottom:12px">⏳ ${esc(S9.busy)}</div>` : ''}${S9.msg ? `<div class="callout${S9.msg[0] === '⚠' ? ' warn' : ''}" style="margin-bottom:12px">${esc(S9.msg)}</div>` : ''}${edit}${main}${actCard}${cmp}${up}${draft}${post}`;
+  return `${S9.busy ? `<div class="callout" style="margin-bottom:12px">⏳ ${esc(S9.busy)}</div>` : ''}${S9.msg ? `<div class="callout${S9.msg[0] === '⚠' ? ' warn' : ''}" style="margin-bottom:12px">${esc(S9.msg)}</div>` : ''}${edit}${main}${actCard}${cmp}${up}${draft}${post}<datalist id="x9"><option value="미실시"><option value="실시"><option value="연기"><option value="취소"><option value="대체 실시"><option value="온라인 실시"></datalist>`;
 }
 
 function bind() {
