@@ -197,6 +197,8 @@ ul.plain{margin:6px 0 0;padding-left:18px;color:var(--ink2)}ul.plain li{margin:4
 .ev9{--h:210;display:block;width:100%;text-align:left;border:0;border-left:3px solid hsl(var(--h) 60% 50%);border-radius:4px;background:color-mix(in srgb,hsl(var(--h) 60% 50%) 16%,var(--surface));color:var(--ink);padding:3px 5px;font-size:11.5px;line-height:1.35;cursor:pointer;word-break:keep-all}.ev9 i{font-style:normal;font-weight:700;color:var(--ink2)}
 .cp{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font-size:10.5px;font-weight:600;line-height:1.7;background:var(--sunk);border:1px solid var(--line2)}.cp.usr{color:#6d28d9}.cp.ok{color:#15803d}.cp.wn{color:#b45309}.cp.no{color:#b91c1c}.cg9{display:flex;gap:8px;flex-wrap:wrap}.cg9 .cp{margin:0;font-size:12.5px;padding:2px 10px}
 .cal9 .cd{position:relative}.addd9{position:absolute;top:2px;right:3px;width:20px;height:20px;border:0;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:13px;line-height:1;cursor:pointer;opacity:0}.cal9 .cd:hover .addd9,.addd9:focus{opacity:1}@media (hover:none){.addd9{opacity:.65}}
+.xb9{cursor:pointer}.xb9:hover{outline:1px solid var(--accent)}
+.ev9.mx{--h:280;background:transparent;border:1px dotted hsl(var(--h) 40% 55%);border-left:3px solid hsl(var(--h) 40% 55%);cursor:default;color:var(--ink2)}
 .ev9.act{background:transparent;border:1px dashed hsl(var(--h) 60% 50%);border-left-width:3px;cursor:pointer}
 .tl9 .kc i{background:hsl(var(--h) 60% 50%)}
 dialog{border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,94vw);max-height:88vh}
@@ -1661,7 +1663,7 @@ function openSession(id) {
   $('#dlg').showModal();
 }
 // ---- P9: 교육일정 관리 (포스터 업로드 → AI 읽기 → 확인·저장) · 간호교육팀 + 전체부서접근 계정 ----
-const S9 = {data: null, loading: false, err: '', view: 'cal', month: '', all: false, act: true, X: null, A: null, Aload: '', cmp: null, draft: null, edit: null, busy: '', msg: ''};
+const S9 = {data: null, loading: false, err: '', view: 'cal', month: '', all: false, act: true, X: null, A: null, Aload: '', mx: false, MX: {}, cmp: null, draft: null, edit: null, busy: '', msg: ''};
 const COLS9 = [['g', '구분', 90], ['t', '교육명', 210], ['tg', '대상', 110], ['d', '일자', 104], ['s', '시작', 62], ['e', '종료', 62], ['p', '장소', 110], ['i', '강사', 90], ['n', '비고', 100], ['x', '실시 정보', 110]];
 const api9 = body => api5('POST', {}, {...body, idToken: S5.token ? undefined : (S.mgr && S.mgr.cred)});
 const ym9 = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
@@ -1779,6 +1781,8 @@ function act9(el) {
   if (a === 'newd') { S9.edit = {id: '', g: '', t: '', tg: '', d: v, s: '', e: '', p: '', i: '', n: '', x: ''}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
   if (a === 'xadd') { const x = S9.X && S9.X.extra[+v]; if (!x) return; S9.edit = {id: '', g: kn9(x.a), t: x.a.s.t, tg: '', d: x.d, s: '', e: '', p: '', i: '', n: '시트 실시 기록에서 추가'}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
   if (a === 'cal') return calSync9();
+  if (a === 'mx') { S9.mx = v === '1'; return render(); }
+  if (a === 'xedit') return xedit9(id);
   if (a === 'act') { S9.act = !S9.act; return render(); }
   if (a === 'all') { S9.all = !S9.all; return render(); }
   if (a === 'new') { S9.edit = {id: '', g: '', t: '', tg: '', d: (S9.month || ym9()) + '-01', s: '', e: '', p: '', i: '', n: '', x: ''}; S9.msg = ''; render(); return $('#ed9')?.scrollIntoView({behavior: 'smooth', block: 'center'}); }
@@ -1832,7 +1836,7 @@ function match9(m, rows) {
     if (best && bs >= 0.8) { const d = best.ds.filter(x => !usedS.has(slot(best, x))).sort((x, y) => Math.abs(new Date(x) - new Date(r.d)) - Math.abs(new Date(y) - new Date(r.d)))[0]; put(r, best, d, 'near', bs); }
     else res.st[r.id] = {st: r.d <= today ? 'none' : 'future'};
   });
-  const A = S9.A && S9.A.month === m ? S9.A.rows.slice() : [], usedA = new Set(); // 시트2 원본 기록(구분과 무관): 6개 구분에 안 잡히는 교육(신규간호사 교육 등)도 대조
+  const A = S9.A && S9.A.month === m ? S9.A.rows.filter(x => !isMx9(x)) : [], usedA = new Set(); // 시트2 원본 기록(구분과 무관): 6개 구분에 안 잡히는 교육(신규간호사 교육 등)도 대조
   const pending = () => rows.filter(r => !usedR.has(r.id) && res.st[r.id] && (res.st[r.id].st === 'none' || res.st[r.id].st === 'future'));
   const claimed = x => acts.some(a => a.ds.includes(x.d) && sim9(x.t, a.s.t) >= 0.6);
   const putA = (r, x, sc) => { res.st[r.id] = {st: 'guess', a: {s: {t: x.t, n1: x.n, k: ''}, ds: [x.d]}, d: x.d, sc, sheet: true}; usedR.add(r.id); usedA.add(x); };
@@ -1846,22 +1850,41 @@ function match9(m, rows) {
 const kn9 = a => KN[a.s.k] || ALLN[a.s.k] || a.s.k || '';
 const ovr9 = id => { const r = S9.data && S9.data.rows.find(x => x.id === id); return r && r.x ? r.x : ''; };
 const actTag9 = id => {
-  const o = ovr9(id); if (o) return `<span class="cp ${/미실시|취소|연기|불참|중단/.test(o) ? 'no' : 'usr'}" title="직접 입력한 실시 정보">${esc(o)}</span>`;
+  const bd = (cls, txt, tip) => `<span class="cp ${cls} xb9" data-a9="xedit" data-id="${esc(id)}" role="button" title="${esc(tip)} · 눌러서 직접 입력">${txt}</span>`;
+  const o = ovr9(id); if (o) return bd(/미실시|취소|연기|불참|중단/.test(o) ? 'no' : 'usr', esc(o), '직접 입력한 실시 정보');
   const c = S9.X && S9.X.st[id]; if (!c) return '';
-  if (c.st === 'ok') return `<span class="cp ok" title="실제 실시 기록과 일치 · 참석 ${fmt(c.a.s.n1)}명">실시 ${fmt(c.a.s.n1)}명</span>`;
-  if (c.st === 'guess') return `<span class="cp ok" title="같은 날짜에 실시된 「${esc(c.a.s.t)}」과 같은 교육으로 판단(교육명이 다름) · 참석 ${fmt(c.a.s.n1)}명">실시 ${fmt(c.a.s.n1)}명 · 명칭 상이</span>`;
-  if (c.st === 'near') return `<span class="cp wn" title="비슷한 교육이 ${esc(c.d)}에 실시됨(${esc(c.a.s.t)})">실시일 ${md(c.d)}</span>`;
-  return c.st === 'none' ? '<span class="cp no" title="날짜가 지났지만 같은 날짜의 참석 기록이 없습니다">기록 없음</span>' : '';
+  if (c.st === 'ok') return bd('ok', `실시 ${fmt(c.a.s.n1)}명`, `실제 실시 기록과 일치 · 참석 ${fmt(c.a.s.n1)}명`);
+  if (c.st === 'guess') return bd('ok', `실시 ${fmt(c.a.s.n1)}명 · 명칭 상이`, `같은 날짜에 실시된 「${c.a.s.t}」과 같은 교육으로 판단(교육명이 다름) · 참석 ${fmt(c.a.s.n1)}명`);
+  if (c.st === 'near') return bd('wn', `실시일 ${md(c.d)}`, `비슷한 교육이 ${c.d}에 실시됨(${c.a.s.t})`);
+  return c.st === 'none' ? bd('no', '기록 없음', '날짜가 지났지만 같은 날짜의 참석 기록이 없습니다') : '';
 };
+async function xedit9(id) {
+  const r = S9.data.rows.find(x => x.id === id); if (!r) return;
+  const v = prompt(`「${r.t}」 ${r.d.slice(5)}\n실시 정보를 직접 적으세요. (예: 미실시, 다음 달로 이동, 보수교육으로 대체)\n비우고 확인하면 자동 판정으로 돌아갑니다.`, r.x || ''); if (v === null) return;
+  S9.busy = '저장하는 중…'; S9.msg = ''; render();
+  try { const j = await api9({action: 'schedupdate', row: {...r, x: v.trim()}}); S9.data.rows = j.rows; S9.msg = '실시 정보를 저장했습니다.' + calMsg9(j); } catch (e) { S9.msg = '⚠ ' + msg9(e); }
+  S9.busy = ''; render();
+}
+// 부서이동자·부서별 특성화 교육(시트2_분류결과의 대시보드 분류 기준)을 날짜별로 묶어 달력에 함께 표시
+const mxc9 = x => x.c || (/부서\s*이동/.test(x.t) ? '부서이동자 교육' : '');
+const isMx9 = x => { const c = mxc9(x); return c === '부서이동자 교육' || c === '부서별 특성화 교육'; };
+function mx9(m) {
+  if (!S9.mx || !S9.A || S9.A.month !== m) return {};
+  const by = {}; S9.A.rows.forEach(x => {
+    if (!isMx9(x)) return; const c = mxc9(x), k = c === '부서이동자 교육' ? x.d + '|M' : x.d + '|S|' + nrm9(x.t);
+    const o = by[k] || (by[k] = {d: x.d, c, t: c === '부서이동자 교육' ? '부서이동자 교육' : x.t, n: 0}); o.n += x.n;
+  });
+  const out = {}; Object.values(by).forEach(o => (out[o.d] ??= []).push(o)); return out;
+}
 const cmpTag9 = id => { const c = S9.cmp && S9.cmp.items && S9.cmp.items[id]; if (!c) return ''; return c.st === 'ok' ? '<span class="cp ok" title="원내교육실시현황과 일치">✓</span>' : c.st === 'date' ? `<span class="cp wn" title="원내교육실시현황에는 ${esc(c.md)}로 등록됨">날짜 다름</span>` : '<span class="cp no" title="원내교육실시현황에서 찾지 못함">현황 없음</span>'; };
 function cal9(rows, m) {
   const [Y, M] = m.split('-').map(Number), first = new Date(Y, M - 1, 1).getDay(), last = new Date(Y, M, 0).getDate(), by = {};
   rows.forEach(r => (by[r.d] ??= []).push(r));
-  const byA = {}; ((S9.X && S9.X.extra) || []).forEach(x => (byA[x.d] ??= []).push(x));
+  const byA = {}; ((S9.X && S9.X.extra) || []).forEach(x => (byA[x.d] ??= []).push(x)); const MX = S9.MX || {};
   let cells = ''; for (let i = 0; i < first; i++) cells += '<div class="cd0"></div>';
   for (let d = 1; d <= last; d++) {
     const ds = `${m}-${String(d).padStart(2, '0')}`, w = (first + d - 1) % 7, ev = (by[ds] || []).sort((a, b) => a.s.localeCompare(b.s));
-    cells += `<div class="cd${w === 0 ? ' su' : w === 6 ? ' sa' : ''}${ds === today9() ? ' td' : ''}"><b>${d}</b><button class="addd9" data-a9="newd" data-v="${ds}" title="이 날짜에 일정 추가" aria-label="${d}일에 일정 추가">＋</button>${ev.map(r => `<button class="ev9" style="--h:${hue9(r.g)}" data-a9="edit" data-id="${esc(r.id)}" title="${esc([r.g, r.t, r.tg && '대상: ' + r.tg, (r.s || r.e) && (r.s + '~' + r.e), r.p && '장소: ' + r.p, r.i && '강사: ' + r.i].filter(Boolean).join(' · '))}">${r.s ? `<i>${esc(r.s)}</i> ` : ''}${esc(r.t)}${cmpTag9(r.id)}${actTag9(r.id)}</button>`).join('')}${(byA[ds] || []).map(x => `<button class="ev9 act" data-a9="xadd" data-v="${S9.X.extra.indexOf(x)}" style="--h:${hue9(kn9(x.a))}" title="실제 실시 기록(포스터에 없음) · ${esc(kn9(x.a))} · ${esc(x.a.s.t)} · 참석 ${fmt(x.a.s.n1)}명 — 누르면 일정에 추가">${esc(x.a.s.t)} <span class="cp ok">실시 ${fmt(x.a.s.n1)}명</span></button>`).join('')}</div>`;
+    cells += `<div class="cd${w === 0 ? ' su' : w === 6 ? ' sa' : ''}${ds === today9() ? ' td' : ''}"><b>${d}</b><button class="addd9" data-a9="newd" data-v="${ds}" title="이 날짜에 일정 추가" aria-label="${d}일에 일정 추가">＋</button>${ev.map(r => `<button class="ev9" style="--h:${hue9(r.g)}" data-a9="edit" data-id="${esc(r.id)}" title="${esc([r.g, r.t, r.tg && '대상: ' + r.tg, (r.s || r.e) && (r.s + '~' + r.e), r.p && '장소: ' + r.p, r.i && '강사: ' + r.i].filter(Boolean).join(' · '))}">${r.s ? `<i>${esc(r.s)}</i> ` : ''}${esc(r.t)}${cmpTag9(r.id)}${actTag9(r.id)}</button>`).join('')}${(byA[ds] || []).map(x => `<button class="ev9 act" data-a9="xadd" data-v="${S9.X.extra.indexOf(x)}" style="--h:${hue9(kn9(x.a))}" title="실제 실시 기록(포스터에 없음) · ${esc(kn9(x.a))} · ${esc(x.a.s.t)} · 참석 ${fmt(x.a.s.n1)}명 — 누르면 일정에 추가">${esc(x.a.s.t)} <span class="cp ok">실시 ${fmt(x.a.s.n1)}명</span></button>`).join('')}${(MX[ds] || []).map(o => `<div class="ev9 mx" title="${esc(o.c)} · ${esc(o.t)} · ${fmt(o.n)}명(시트2 기준)">${esc(o.t)} <span class="cp">${fmt(o.n)}명</span></div>`).join('')}</div>`;
   }
   return `<div class="cwrap9"><div class="cal9">${['일', '월', '화', '수', '목', '금', '토'].map(x => `<div class="ch">${x}</div>`).join('')}${cells}</div></div>`;
 }
@@ -1892,11 +1915,11 @@ function p9() {
       ${om.length ? `<p class="hint" style="margin:12px 0 6px">원내교육실시현황에는 있지만 이 달 일정표에 없는 교육</p><div class="tw" style="max-height:none"><table class="tl9"><thead><tr><th>일자</th><th>구분</th><th>교육명</th><th>대상</th></tr></thead><tbody>${om.map(x => `<tr><td class="nw">${esc(x.d.slice(5))} (${wd9(x.d)})</td><td>${esc(x.g)}</td><td>${esc(x.t)}</td><td>${esc(x.tg)}</td></tr>`).join('')}</tbody></table></div>` : ''}
       ${inM.some(r => (S9.cmp.items[r.id] || {}).st === 'date') ? `<p class="hint" style="margin:12px 0 6px">날짜가 다른 교육</p><div class="tw" style="max-height:none"><table class="tl9"><thead><tr><th>교육명</th><th>일정표</th><th>원내현황</th></tr></thead><tbody>${inM.filter(r => (S9.cmp.items[r.id] || {}).st === 'date').map(r => `<tr><td>${esc(r.t)}</td><td class="nw">${esc(r.d.slice(5))} (${wd9(r.d)})</td><td class="nw">${esc(S9.cmp.items[r.id].md.slice(5))}</td></tr>`).join('')}</tbody></table></div>` : ''}</section>`;
   }
-  if (S9.act && (!S9.A || S9.A.month !== m) && S9.Aload !== m) setTimeout(() => loadA9(m), 0);
-  S9.X = S9.act ? match9(m, inM) : null;
+  if ((S9.act || S9.mx) && (!S9.A || S9.A.month !== m) && S9.Aload !== m) setTimeout(() => loadA9(m), 0);
+  S9.X = S9.act ? match9(m, inM) : null; S9.MX = mx9(m);
   const shown = S9.all ? all : inM;
   const main = `<section class="card"><div class="tools"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn" data-a9="prev" aria-label="이전 달">◀</button><h2 style="margin:0;min-width:96px;text-align:center">${m.replace('-', '년 ')}월</h2><button class="btn" data-a9="next" aria-label="다음 달">▶</button><button class="btn" data-a9="today">오늘</button><span class="note">${inM.length}건</span></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="tg" role="group" aria-label="보기"><button data-a9="view" data-v="cal" aria-pressed="${S9.view === 'cal'}">달력</button><button data-a9="view" data-v="list" aria-pressed="${S9.view === 'list'}">목록</button></div>${S9.view === 'list' ? `<button class="chip" data-a9="all" aria-pressed="${S9.all}">전체 기간</button>` : ''}<button class="chip" data-a9="act" aria-pressed="${S9.act}" title="참석 명단(시트) 기준으로 실제 실시된 교육을 달력에 함께 표시">실제 실시 표시</button><button class="btn" data-a9="new">＋ 일정 추가</button><button class="btn" data-a9="cmp">원내현황 대조</button><button class="btn" data-a9="cal" title="일정을 내 구글 캘린더(「간호교육 일정」)에 반영">구글 캘린더 반영</button>${posM.map(p => `<button class="btn" data-a9="pv" data-v="${esc(p.id)}">포스터 보기</button>`).join('')}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="tg" role="group" aria-label="보기"><button data-a9="view" data-v="cal" aria-pressed="${S9.view === 'cal'}">달력</button><button data-a9="view" data-v="list" aria-pressed="${S9.view === 'list'}">목록</button></div>${S9.view === 'list' ? `<button class="chip" data-a9="all" aria-pressed="${S9.all}">전체 기간</button>` : ''}<button class="chip" data-a9="act" aria-pressed="${S9.act}" title="참석 명단(시트) 기준으로 실제 실시된 교육을 달력에 함께 표시">실제 실시 표시</button><div class="tg" role="group" aria-label="부서이동자·특성화 교육"><button data-a9="mx" data-v="0" aria-pressed="${!S9.mx}" title="부서이동자·부서별 특성화 교육을 뺀 달력">부서이동자·특성화 제외</button><button data-a9="mx" data-v="1" aria-pressed="${S9.mx}" title="시트2에 기록된 부서이동자·부서별 특성화 교육을 달력에 함께 표시">포함</button></div><button class="btn" data-a9="new">＋ 일정 추가</button><button class="btn" data-a9="cmp">원내현황 대조</button><button class="btn" data-a9="cal" title="일정을 내 구글 캘린더(「간호교육 일정」)에 반영">구글 캘린더 반영</button>${posM.map(p => `<button class="btn" data-a9="pv" data-v="${esc(p.id)}">포스터 보기</button>`).join('')}</div></div>
       <div style="margin-top:12px">${S9.view === 'cal' ? cal9(inM, m) : list9(shown)}</div></section>`;
   let actCard = '';
   if (S9.X) {
@@ -1918,7 +1941,7 @@ function p9() {
 }
 
 function bind() {
-  document.querySelectorAll('[data-a9]').forEach(b => b.addEventListener('click', () => act9(b)));
+  document.querySelectorAll('[data-a9]').forEach(b => b.addEventListener('click', ev => { if (b.dataset.a9 !== 'xedit' && ev.target.closest('[data-a9="xedit"]')) return; act9(b); }));
   document.querySelectorAll('[data-d9]').forEach(i => i.addEventListener('change', () => { const [n, k] = i.dataset.d9.split(':'); S9.draft.rows[+n][k] = i.value.trim(); i.classList.toggle('bad', (k === 't' && !i.value.trim()) || (k === 'd' && !dOK9(i.value.trim()))); }));
   $('#f9')?.addEventListener('change', e => { pick9(e.target.files[0]); e.target.value = ''; });
   const dz = $('#dz9'); if (dz) { dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('on'); }); dz.addEventListener('dragleave', () => dz.classList.remove('on')); dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('on'); pick9(e.dataTransfer.files[0]); }); }
