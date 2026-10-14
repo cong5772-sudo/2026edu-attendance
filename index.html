@@ -1802,7 +1802,7 @@ function sim9(x, y) {
   return Math.max(sub, c / sm.size);
 }
 const cat9 = (g, k) => { g = String(g || ''); if (/파트장/.test(g)) return k === 'PTL'; if (/선임/.test(g)) return k === 'SEN'; if (/술기/.test(g)) return k === 'EMG' || k === 'TOP'; if (/직무/.test(g)) return ['REG', 'EMG', 'TOP', 'DED'].includes(k); return false; };
-function act9(m, rows) {
+function match9(m, rows) {
   const today = today9(), res = {st: {}, extra: [], n: 0};
   const acts = SESS.map(s => ({s, ds: [...new Set((s.dts.length ? s.dts : [s.d]).filter(d => d && d.slice(0, 7) === m))]})).filter(a => a.ds.length);
   res.n = acts.length;
@@ -1878,7 +1878,7 @@ function p9() {
       ${om.length ? `<p class="hint" style="margin:12px 0 6px">원내교육실시현황에는 있지만 이 달 일정표에 없는 교육</p><div class="tw" style="max-height:none"><table class="tl9"><thead><tr><th>일자</th><th>구분</th><th>교육명</th><th>대상</th></tr></thead><tbody>${om.map(x => `<tr><td class="nw">${esc(x.d.slice(5))} (${wd9(x.d)})</td><td>${esc(x.g)}</td><td>${esc(x.t)}</td><td>${esc(x.tg)}</td></tr>`).join('')}</tbody></table></div>` : ''}
       ${inM.some(r => (S9.cmp.items[r.id] || {}).st === 'date') ? `<p class="hint" style="margin:12px 0 6px">날짜가 다른 교육</p><div class="tw" style="max-height:none"><table class="tl9"><thead><tr><th>교육명</th><th>일정표</th><th>원내현황</th></tr></thead><tbody>${inM.filter(r => (S9.cmp.items[r.id] || {}).st === 'date').map(r => `<tr><td>${esc(r.t)}</td><td class="nw">${esc(r.d.slice(5))} (${wd9(r.d)})</td><td class="nw">${esc(S9.cmp.items[r.id].md.slice(5))}</td></tr>`).join('')}</tbody></table></div>` : ''}</section>`;
   }
-  S9.X = S9.act ? act9(m, inM) : null;
+  S9.X = S9.act ? match9(m, inM) : null;
   const shown = S9.all ? all : inM;
   const main = `<section class="card"><div class="tools"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn" data-a9="prev" aria-label="이전 달">◀</button><h2 style="margin:0;min-width:96px;text-align:center">${m.replace('-', '년 ')}월</h2><button class="btn" data-a9="next" aria-label="다음 달">▶</button><button class="btn" data-a9="today">오늘</button><span class="note">${inM.length}건</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="tg" role="group" aria-label="보기"><button data-a9="view" data-v="cal" aria-pressed="${S9.view === 'cal'}">달력</button><button data-a9="view" data-v="list" aria-pressed="${S9.view === 'list'}">목록</button></div>${S9.view === 'list' ? `<button class="chip" data-a9="all" aria-pressed="${S9.all}">전체 기간</button>` : ''}<button class="chip" data-a9="act" aria-pressed="${S9.act}" title="참석 명단(시트) 기준으로 실제 실시된 교육을 달력에 함께 표시">실제 실시 표시</button><button class="btn" data-a9="new">＋ 일정 추가</button><button class="btn" data-a9="cmp">원내현황 대조</button><button class="btn" data-a9="cal" title="일정을 내 구글 캘린더(「간호교육 일정」)에 반영">구글 캘린더 반영</button>${posM.map(p => `<button class="btn" data-a9="pv" data-v="${esc(p.id)}">포스터 보기</button>`).join('')}</div></div>
